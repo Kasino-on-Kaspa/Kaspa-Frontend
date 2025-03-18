@@ -1,0 +1,103 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Darker+Grotesque:wght@300..900&family=Onest:wght@400;500;600;700&display=swap');
+
+@import "tailwindcss";
+
+@theme {
+    --font-Onest: "Onest", "sans-serif";
+}
+
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: #6fc7ba20;
+    border-radius: 20px;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    background: #6fc7ba40;
+  }
+  
+  /* For Firefox */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #6fc7ba20 transparent;
+  }
+  
+  /* Hide scrollbar for specific elements while keeping functionality */
+  .hide-scrollbar {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+  
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;  /* Chrome, Safari and Opera */
+  }
+  
+  /* Custom Scrollbar for dark themed containers */
+  .dark-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  
+  .dark-scrollbar::-webkit-scrollbar-track {
+    background: #1a1a1a;
+  }
+  
+  .dark-scrollbar::-webkit-scrollbar-thumb {
+    background: #333;
+    border-radius: 20px;
+  }
+  
+  .dark-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #444;
+  }
+  
+  /* For Firefox - dark theme */
+  .dark-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: #333 #1a1a1a;
+  }
+  
+  /* Existing scrollbar class */
+  .scrollbar::-webkit-scrollbar {
+    width: 4px;
+  }
+  
+  .scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .scrollbar::-webkit-scrollbar-thumb {
+    background: #6fc7ba20;
+    border-radius: 20px;
+  }
+  
+  .scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #6fc7ba40;
+  }
+  
+  /* For Firefox */
+  .scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: #6fc7ba20 transparent;
+  }
+  
+  @keyframes marquee {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(-50%);
+    }
+  }
+  
+  .animate-marquee {
+    animation: marquee 30s linear infinite;
+  }
