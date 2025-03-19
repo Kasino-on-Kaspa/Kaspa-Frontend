@@ -5,6 +5,7 @@ import "./index.css";
 
 // Import the generated route tree
 import { routeTree } from "./routeTree.gen";
+import KaspaWalletProvider from "./components/KaspaWalletProvider";
 
 const queryClient = new QueryClient();
 
@@ -26,7 +27,9 @@ declare module "@tanstack/react-router" {
 
 // Render the app
 ReactDOM.createRoot(document.getElementById("root")!).render(
-  <QueryClientProvider client={queryClient}>
-    <RouterProvider router={router} />
-  </QueryClientProvider>
+  <KaspaWalletProvider>
+    <QueryClientProvider client={queryClient}>
+      <RouterProvider router={router} />
+    </QueryClientProvider>
+  </KaspaWalletProvider>,
 );

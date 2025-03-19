@@ -15,7 +15,7 @@ import AffiliateCard from "./AffiliateCard";
 import PrizeFeed from "./PrizeFeed";
 import KaspaPriceFeed from "./KaspaPriceFeed";
 import SwipeGuide from "./SwipeGuide";
-// import WalletButton from "./WalletButton";
+import WalletButton from "./WalletButton";
 
 const navLinks = [
   {
@@ -117,8 +117,9 @@ export default function Navbar() {
       <div className="space-y-3 mt-3 flex-1">
         <PrizeFeed />
         <AffiliateCard />
+        <WalletButton />
       </div>
-      <div className="mt-4 w-full">{/* <WalletButton /> */}</div>
+      <div className="mt-4 w-full">{/* WalletButton moved above */}</div>
     </div>
   );
 

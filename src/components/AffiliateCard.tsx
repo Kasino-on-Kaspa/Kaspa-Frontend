@@ -14,10 +14,6 @@ export default function AffiliateCard() {
       text: "Lifetime commissions",
     },
     {
-      icon: "ph:chart-line-up-fill",
-      text: "Real-time tracking",
-    },
-    {
       icon: "ph:currency-circle-dollar-fill",
       text: "Instant payouts",
     },
