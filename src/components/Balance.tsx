@@ -2,11 +2,13 @@
 
 import { LineChart, Line, ResponsiveContainer, YAxis } from "recharts";
 import { useKaspaData, useKaspaHistoricalData } from "../hooks/useKaspaData";
-
+import { formatAddress } from "@/lib/utils";
 export default function Balance({
   userBalance,
+  userAddress,
 }: {
   userBalance: string | undefined;
+  userAddress: string | undefined;
 }) {
   const { data: kaspaData, isLoading: isLoadingKaspa } = useKaspaData();
   const { data: historicalData, isLoading: isLoadingHistorical } =
@@ -42,6 +44,11 @@ export default function Balance({
   return (
     <div className="space-y-3 p-3 rounded-2xl bg-white/5">
       <div>
+        {userAddress && (
+          <p className="text-white/50 font-light mb-1 leading-none text-xs">
+            {formatAddress(userAddress)}
+          </p>
+        )}
         <div className="flex items-end gap-1">
           <p className="text-white/80 font-semibold leading-none text-2xl">
             {userBalance}

@@ -1,60 +1,114 @@
 import { create } from "zustand";
-import { KaspaWallet, NetworkType } from "@/types/kaspa";
-import { WalletState, WalletBalance, UserData } from "@/types/wallet";
-import {
-  login,
-  fetchUserData,
-  updateUsername,
-  deleteUser,
-  updateReferredBy,
-} from "@/lib/walletApi";
+import { NetworkType, Balance, KaspaWallet } from "@/types/kaspa";
+import { setAuthTokens, getStoredTokens, clearTokens } from "@/lib/auth";
+import { getMessageForSigning } from "@/lib/walletQueries";
+
+interface UserData {
+  username?: string;
+}
+
+interface WalletState {
+  wallet: KaspaWallet | null;
+  address: string;
+  balance: Balance | null;
+  network: NetworkType;
+  isConnecting: boolean;
+  isAuthenticated: boolean;
+  authError: string | null;
+  authExpiry: number | null;
+  userData: UserData | null;
+  setWallet: (wallet: KaspaWallet | null) => void;
+  setAddress: (address: string) => void;
+  setBalance: (balance: Balance | null) => void;
+  setNetwork: (network: NetworkType) => void;
+  setIsConnecting: (isConnecting: boolean) => void;
+  setIsAuthenticated: (isAuthenticated: boolean) => void;
+  setAuthError: (error: string | null) => void;
+  setAuthExpiry: (expiry: number | null) => void;
+  setUserData: (userData: UserData | null) => void;
+  disconnect: () => void;
+  authenticate: () => Promise<void>;
+  initWallet: (wallet: KaspaWallet) => Promise<void>;
+  checkAuthExpiry: () => Promise<void>;
+}
 
 const useWalletStore = create<WalletState>((set, get) => ({
   wallet: null,
-  address: null,
-  publicKey: null,
+  address: "",
   balance: null,
-  network: null,
+  network: "kaspa_mainnet",
   isConnecting: false,
   isAuthenticated: false,
   authError: null,
   authExpiry: null,
   userData: null,
-  setWallet: (wallet: KaspaWallet | null) => set({ wallet }),
-  setAddress: (address: string | null) => set({ address }),
-  setPublicKey: (publicKey: string | null) => set({ publicKey }),
-  setBalance: (balance: WalletBalance | null) => set({ balance }),
-  setNetwork: (network: NetworkType | null) => set({ network }),
-  setIsConnecting: (isConnecting: boolean) => set({ isConnecting }),
-  setIsAuthenticated: (isAuthenticated: boolean) => set({ isAuthenticated }),
-  setAuthError: (error: string | null) => set({ authError: error }),
-  setAuthExpiry: (expiry: number | null) => set({ authExpiry: expiry }),
-  setUserData: (userData: UserData | null) => set({ userData }),
+  setWallet: (wallet) => set({ wallet }),
+  setAddress: (address) => set({ address }),
+  setBalance: (balance) => set({ balance }),
+  setNetwork: (network) => set({ network }),
+  setIsConnecting: (isConnecting) => set({ isConnecting }),
+  setIsAuthenticated: (isAuthenticated) => set({ isAuthenticated }),
+  setAuthError: (error) => set({ authError: error }),
+  setAuthExpiry: (expiry) => set({ authExpiry: expiry }),
+  setUserData: (userData) => set({ userData }),
   disconnect: () => {
-    localStorage.removeItem("authTokens");
+    clearTokens();
     set({
-      address: null,
+      address: "",
       balance: null,
-      network: null,
+      network: "kaspa_mainnet",
       isAuthenticated: false,
       authError: null,
       authExpiry: null,
       userData: null,
     });
   },
-  checkAuthExpiry: () => {
+  checkAuthExpiry: async () => {
     const { authExpiry } = get();
     if (authExpiry && Date.now() / 1000 >= authExpiry) {
-      localStorage.removeItem("authTokens");
-      set({
-        isAuthenticated: false,
-        authExpiry: null,
-        authError: "Authentication expired",
-        userData: null,
-      });
+      try {
+        const tokens = getStoredTokens();
+        if (!tokens?.refreshToken) {
+          throw new Error("No refresh token available");
+        }
+
+        const response = await fetch(
+          `${import.meta.env.VITE_BACKEND_URL}/auth/refresh`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ refreshToken: tokens.refreshToken }),
+          },
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to refresh token");
+        }
+
+        const data = await response.json();
+        setAuthTokens({
+          accessToken: data.accessToken,
+          refreshToken: data.refreshToken,
+        });
+
+        // Update expiry time
+        set({
+          authError: null,
+          authExpiry: data.expiry,
+        });
+      } catch (error) {
+        console.error("Token refresh failed:", error);
+        clearTokens();
+        set({
+          isAuthenticated: false,
+          authExpiry: null,
+          authError: "Authentication expired",
+          userData: null,
+        });
+      }
     }
   },
-  initWallet: async (wallet: KaspaWallet) => {
+  initWallet: async (wallet) => {
     console.log("Initializing wallet...");
     set({ wallet });
     try {
@@ -67,9 +121,8 @@ const useWalletStore = create<WalletState>((set, get) => ({
         const balance = await wallet.getBalance();
         set({ balance });
 
-        // Check for existing session
-        const storedTokens = localStorage.getItem("authTokens");
-        if (storedTokens) {
+        const tokens = getStoredTokens();
+        if (tokens) {
           set({
             isAuthenticated: true,
             authError: null,
@@ -77,109 +130,84 @@ const useWalletStore = create<WalletState>((set, get) => ({
           return;
         }
 
-        // If no session, authenticate
         await get().authenticate();
       }
     } catch (error) {
       console.error("Error initializing wallet:", error);
-      set({
-        authError:
-          error instanceof Error
-            ? error.message
-            : "Failed to initialize wallet",
-      });
     }
   },
   authenticate: async () => {
-    const { address, publicKey } = get();
-    if (!address || !publicKey) {
-      throw new Error("Wallet not connected");
+    console.log("Starting authentication...");
+    const { wallet, address, network } = get();
+
+    if (!wallet || !address) {
+      console.log("No wallet or address available for authentication");
+      return;
     }
 
     try {
-      const data = await login(address, publicKey);
-      localStorage.setItem(
-        "authTokens",
-        JSON.stringify({
-          accessToken: data.accessToken,
-          refreshToken: data.refreshToken,
-        }),
+      const existingTokens = getStoredTokens();
+      if (existingTokens) {
+        set({
+          isAuthenticated: true,
+          authError: null,
+        });
+        return;
+      }
+
+      const { message, nonce, expiry } = await getMessageForSigning(
+        address,
+        network,
       );
+
+      const signature = await wallet.signMessage(message);
+
+      const publicKey = await wallet.getPublicKey();
+
+      const authData = await fetch(
+        `${import.meta.env.VITE_BACKEND_URL}/auth/signin`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            message,
+            signature,
+            publicKey,
+            address,
+            nonce,
+            expiry,
+          }),
+        },
+      ).then((res) => res.json());
+
+      setAuthTokens({
+        accessToken: authData.accessToken,
+        refreshToken: authData.refreshToken,
+      });
 
       set({
         isAuthenticated: true,
         authError: null,
-        authExpiry: data.expiry,
-        userData: data.user,
+        authExpiry: expiry,
+        userData: authData.user,
       });
+
+      const checkInterval = setInterval(() => {
+        get().checkAuthExpiry();
+        if (!get().isAuthenticated) {
+          clearInterval(checkInterval);
+        }
+      }, 1000);
     } catch (error) {
       console.error("Authentication error:", error);
+      clearTokens();
       set({
         isAuthenticated: false,
         authError:
           error instanceof Error ? error.message : "Authentication failed",
-      });
-      throw error;
-    }
-  },
-  fetchUserData: async () => {
-    try {
-      const userData = await fetchUserData();
-      set({ userData });
-    } catch (error) {
-      console.error("Error fetching user data:", error);
-      set({
-        authError:
-          error instanceof Error ? error.message : "Failed to fetch user data",
-      });
-      throw error;
-    }
-  },
-  updateUsername: async (username: string) => {
-    try {
-      const userData = await updateUsername(username);
-      set({ userData });
-    } catch (error) {
-      console.error("Error updating username:", error);
-      set({
-        authError:
-          error instanceof Error ? error.message : "Failed to update username",
-      });
-      throw error;
-    }
-  },
-  deleteUser: async () => {
-    try {
-      await deleteUser();
-      localStorage.removeItem("authTokens");
-      set({
-        isAuthenticated: false,
-        userData: null,
-        authError: null,
         authExpiry: null,
+        userData: null,
       });
-    } catch (error) {
-      console.error("Error deleting user:", error);
-      set({
-        authError:
-          error instanceof Error ? error.message : "Failed to delete user",
-      });
-      throw error;
-    }
-  },
-  updateReferredBy: async (referralCode: string) => {
-    try {
-      const userData = await updateReferredBy(referralCode);
-      set({ userData });
-    } catch (error) {
-      console.error("Error updating referral code:", error);
-      set({
-        authError:
-          error instanceof Error
-            ? error.message
-            : "Failed to update referral code",
-      });
-      throw error;
     }
   },
 }));

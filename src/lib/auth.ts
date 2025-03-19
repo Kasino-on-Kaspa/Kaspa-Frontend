@@ -42,12 +42,20 @@ const refreshTokens = async (refreshToken: string): Promise<AuthTokens> => {
   };
 };
 
-const getStoredTokens = (): AuthTokens | null => {
+export const getStoredTokens = (): AuthTokens | null => {
   const storedTokens = localStorage.getItem("authTokens");
   if (storedTokens) {
     return JSON.parse(storedTokens);
   }
   return null;
+};
+
+export const setAuthTokens = (tokens: AuthTokens): void => {
+  localStorage.setItem("authTokens", JSON.stringify(tokens));
+};
+
+export const clearTokens = (): void => {
+  localStorage.removeItem("authTokens");
 };
 
 // React Query hooks
@@ -63,7 +71,7 @@ export function useRefreshToken() {
   return useMutation({
     mutationFn: refreshTokens,
     onSuccess: (newTokens) => {
-      localStorage.setItem("authTokens", JSON.stringify(newTokens));
+      setAuthTokens(newTokens);
     },
   });
 }
@@ -88,7 +96,7 @@ export async function authenticatedFetch(
 
   if (response.status === 401) {
     const newTokens = await refreshTokens(storedTokens.refreshToken);
-    localStorage.setItem("authTokens", JSON.stringify(newTokens));
+    setAuthTokens(newTokens);
 
     headers.set("Authorization", `Bearer ${newTokens.accessToken}`);
     return fetch(input, {

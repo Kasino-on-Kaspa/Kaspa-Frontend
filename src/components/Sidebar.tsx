@@ -119,7 +119,6 @@ export default function Navbar() {
         <AffiliateCard />
         <WalletButton />
       </div>
-      <div className="mt-4 w-full">{/* WalletButton moved above */}</div>
     </div>
   );
 
