@@ -1,6 +1,7 @@
 "use client";
 
 import { Icon } from "@iconify/react";
+import { Button } from "./ui/button";
 
 export default function AffiliateCard() {
   const benefits = [
@@ -44,12 +45,12 @@ export default function AffiliateCard() {
         ))}
       </div>
 
-      <button
-        className="w-full rounded-md bg-[#6fc7ba] hover:bg-[#6fc7ba]/90 text-[10px] h-8"
+      <Button
+        className="w-full rounded-md bg-[#6fc7ba] text-[#333] hover:bg-[#6fc7ba]/90 text-[10px] h-8"
         // onClick={() => window.open("/affiliate", "_blank")}
       >
         Coming Soon
-      </button>
+      </Button>
     </div>
   );
 }
