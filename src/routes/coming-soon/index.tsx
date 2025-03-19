@@ -1,11 +1,17 @@
+import { createFileRoute } from "@tanstack/react-router";
+
+export const Route = createFileRoute("/coming-soon/")({
+  component: Index,
+});
+
 import { motion, AnimatePresence } from "framer-motion";
 import { Icon } from "@iconify/react";
 import { useState } from "react";
-import Logo from "./assets/Logo.png";
-import Sidebar from "./components/Sidebar";
-import Marquee from "./components/Marquee";
+import Logo from "../../assets/Logo.png";
+import Sidebar from "../../components/Sidebar";
+import Marquee from "../../components/Marquee";
 
-export default function App() {
+export default function Index() {
   const [email, setEmail] = useState("");
   const [isSubmitted, setIsSubmitted] = useState(false);
 

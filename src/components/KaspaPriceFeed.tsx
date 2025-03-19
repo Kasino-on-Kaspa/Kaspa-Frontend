@@ -1,62 +1,15 @@
 "use client";
 
 import { LineChart, Line, ResponsiveContainer, YAxis } from "recharts";
-import { useEffect, useState } from "react";
-import { getKaspaPrice, getKaspaChart } from "../utils/utils";
+import { useKaspaData, useKaspaHistoricalData } from "../hooks/useKaspaData";
 import Kaspa from "../assets/Kaspa.png";
 
-interface PriceData {
-  price: number;
-  change24h: number;
-}
-
-interface ChartData {
-  value: number;
-}
-
 export default function KaspaPriceFeed() {
-  const [priceData, setPriceData] = useState<PriceData | null>(null);
-  const [chartData, setChartData] = useState<ChartData[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: kaspaData, isLoading: isLoadingKaspa } = useKaspaData();
+  const { data: historicalData, isLoading: isLoadingHistorical } =
+    useKaspaHistoricalData("1d");
 
-  useEffect(() => {
-    let mounted = true;
-
-    async function fetchData() {
-      try {
-        const [price, chart] = await Promise.all([
-          getKaspaPrice(),
-          getKaspaChart(),
-        ]);
-
-        if (!mounted) return;
-
-        if (price) setPriceData(price);
-        if (chart && chart.length > 0) {
-          const validChartData = chart.filter(
-            (point: ChartData) =>
-              point && typeof point.value === "number" && !isNaN(point.value)
-          );
-          setChartData(validChartData);
-        }
-      } catch (error) {
-        console.error("Error loading data:", error);
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    }
-
-    fetchData();
-
-    const interval = setInterval(fetchData, 60000);
-
-    return () => {
-      mounted = false;
-      clearInterval(interval);
-    };
-  }, []);
-
-  if (loading) {
+  if (isLoadingKaspa || isLoadingHistorical) {
     return (
       <div className="space-y-3 pl-3 pr-3 pt-3 pb-3 rounded-2xl bg-white/5 animate-pulse">
         <div className="flex items-center gap-3">
@@ -72,8 +25,18 @@ export default function KaspaPriceFeed() {
     );
   }
 
-  const chartColor =
-    priceData?.change24h && priceData.change24h > 0 ? "#6fc7ba" : "#ef4444";
+  if (!kaspaData || !historicalData) {
+    return null;
+  }
+
+  const currentPrice = kaspaData.quote.USD.price;
+  const priceChangePercent = kaspaData.quote.USD.percent_change_24h;
+  const chartColor = priceChangePercent >= 0 ? "#6fc7ba" : "#ef4444";
+
+  // Format historical data for the chart
+  const chartData = historicalData.map((point) => ({
+    value: point.price,
+  }));
 
   return (
     <div className="space-y-3 p-3 rounded-2xl bg-white/5">
@@ -93,19 +56,17 @@ export default function KaspaPriceFeed() {
       <div>
         <div className="flex items-end gap-1">
           <p className="text-white/80 font-semibold leading-none text-2xl">
-            {priceData?.price.toFixed(5)}
+            {currentPrice.toFixed(5)}
           </p>
           <p className="text-[10px] leading-4 text-white/80">USD</p>
         </div>
         <p
           className={`text-[10px] ${
-            priceData?.change24h && priceData.change24h > 0
-              ? "text-green-400"
-              : "text-red-400"
+            priceChangePercent >= 0 ? "text-green-400" : "text-red-400"
           } mt-0.5`}
         >
-          {priceData?.change24h! > 0 ? "+" : ""}
-          {priceData?.change24h.toFixed(2)}% (24h)
+          {priceChangePercent >= 0 ? "+" : ""}
+          {priceChangePercent.toFixed(2)}% (24h)
         </p>
       </div>
       {chartData.length > 0 && (
