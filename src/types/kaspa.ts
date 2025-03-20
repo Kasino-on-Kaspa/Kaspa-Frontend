@@ -51,9 +51,9 @@ export interface KRC20BatchTransferItem {
 }
 
 export interface Balance {
-  confirmed: string;
-  unconfirmed: string;
-  total: string;
+  confirmed: number;
+  unconfirmed: number;
+  total: number;
 }
 
 export interface UtxoEntry {
@@ -64,9 +64,22 @@ export interface UtxoEntry {
   index: number;
 }
 
+export interface KRC20Balance {
+  balance: string;
+  dec: string;
+  locked: string;
+  opScoreMod: string;
+  tick: string;
+}
+
+export interface TransactionReplacementResponse {
+  transactionId: string;
+  replacedTransactionId: string;
+}
+
 export interface KaspaWallet {
   /** Request user permission to access their Kaspa wallet */
-  requestAccounts(): Promise<void>;
+  requestAccounts(): Promise<string[]>;
 
   /** Get the current network the wallet is connected to */
   getNetwork(): Promise<NetworkType>;
@@ -86,7 +99,7 @@ export interface KaspaWallet {
   getBalance(): Promise<Balance>;
 
   /** Get KRC20 token balances for the current account */
-  getKRC20Balance(): Promise<Record<string, string>>;
+  getKRC20Balance(): Promise<KRC20Balance[]>;
 
   /** Get UTXO entries for a given address
    * @param address - The address to get UTXOs for
@@ -220,4 +233,37 @@ export interface KaspaWallet {
 
   /** Initialize the wallet */
   initialize(): void;
+
+  /** Event listeners */
+  on: (event: KaspaWalletEvent, handler: (data: any) => void) => void;
+
+  removeListener: (
+    event: KaspaWalletEvent,
+    handler: (data: any) => void,
+  ) => void;
+}
+
+export type KaspaWalletEvent =
+  | "accountsChanged"
+  | "networkChanged"
+  | "balanceChanged"
+  | "transactionReplacementResponse";
+
+export interface KaspaWalletEventHandlers {
+  accountsChanged: (accounts: string[]) => void;
+  networkChanged: (network: NetworkType) => void;
+  balanceChanged: (balance: {
+    address: string;
+    balance: {
+      mature: number;
+      pending: number;
+      outgoing: number;
+      matureUtxoCount: number;
+      pendingUtxoCount: number;
+      stasisUtxoCount: number;
+    };
+  }) => void;
+  transactionReplacementResponse: (
+    response: TransactionReplacementResponse,
+  ) => void;
 }

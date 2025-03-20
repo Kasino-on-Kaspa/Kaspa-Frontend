@@ -81,8 +81,36 @@ export default function WalletButton() {
   ) : (
     <Dialog>
       <DialogTrigger asChild>
-        <button className="w-full font-Onest rounded-md bg-[#6fc7ba] cursor-pointer text-[#333] hover:bg-[#6fc7ba]/90 text-[10px] h-8">
-          {balance?.total ? formatKAS(balance.total) : "0.00000000"} KAS
+        <button className="w-full font-Onest rounded-lg bg-[#2a2a2a]/80 cursor-pointer text-[#333] hover:bg-[#2a2a2a]/90 text-[10px] p-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1">
+              <Icon
+                icon="solar:shield-minimalistic-bold"
+                className={`text-[12px] ${
+                  isAuthenticated ? "text-[#6fc7ba]" : "text-red-400"
+                }`}
+              />
+              <p
+                className={`text-xs font-Onest ${
+                  isAuthenticated ? "text-[#6fc7ba]" : "text-red-400"
+                }`}
+              >
+                {isAuthenticated ? "Authenticated" : "Unauthenticated"}
+              </p>
+            </div>
+            <div className="flex items-center gap-1">
+              <Icon
+                icon="material-symbols-light:network-locked"
+                className="text-[12px] text-[#6fc7ba]"
+              />
+              <p className="text-xs font-Onest text-[#6fc7ba]">17ms</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 mt-2">
+            <p className="text-base tracking-tighter font-Onest text-[#6fc7ba]">
+              {balance?.total ? formatKAS(balance.total) : "0.00000000"} KAS
+            </p>
+          </div>
         </button>
       </DialogTrigger>
       <DialogContent className="bg-[#2a2627] border border-white/10 text-white rounded-3xl w-[300px] md:w-[400px]">
@@ -127,7 +155,7 @@ export default function WalletButton() {
           </button>
         </div>
         <Balance
-          userBalance={formatKAS(balance?.total || "0")}
+          userBalance={formatKAS(balance?.total || 0)}
           userAddress={address}
         />
         {authError && (

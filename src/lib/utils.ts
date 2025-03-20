@@ -10,6 +10,6 @@ export function formatAddress(address: string): string {
   return `${address.slice(0, 6)}...${address.slice(-4)}`;
 }
 
-export function formatKAS(sompi: string) {
-  return (parseInt(sompi) / 100000000).toFixed(8);
+export function formatKAS(sompi: number) {
+  return (sompi / 100000000).toFixed(8);
 }
