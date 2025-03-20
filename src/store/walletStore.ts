@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { NetworkType, Balance, KaspaWallet } from "@/types/kaspa";
 import { setAuthTokens, getStoredTokens, clearTokens } from "@/lib/auth";
 import { getMessageForSigning } from "@/lib/walletQueries";
+import useSocketStore from "./socketStore";
 
 interface UserData {
   username?: string;
@@ -15,6 +16,10 @@ interface WalletState {
   isConnecting: boolean;
   isAuthenticated: boolean;
   authError: string | null;
+  onSiteBalance: {
+    balance: string;
+    address: string;
+  } | null;
   authExpiry: number | null;
   userData: UserData | null;
   setWallet: (wallet: KaspaWallet | null) => void;
@@ -30,10 +35,12 @@ interface WalletState {
   authenticate: () => Promise<void>;
   initWallet: (wallet: KaspaWallet) => Promise<void>;
   checkAuthExpiry: () => Promise<void>;
+  initializeWalletSocketListeners: () => void;
 }
 
 const useWalletStore = create<WalletState>((set, get) => ({
   wallet: null,
+  onSiteBalance: null,
   address: "",
   balance: null,
   network: "kaspa_mainnet",
@@ -51,6 +58,7 @@ const useWalletStore = create<WalletState>((set, get) => ({
   setAuthError: (error) => set({ authError: error }),
   setAuthExpiry: (expiry) => set({ authExpiry: expiry }),
   setUserData: (userData) => set({ userData }),
+
   disconnect: () => {
     clearTokens();
     set({
@@ -208,6 +216,29 @@ const useWalletStore = create<WalletState>((set, get) => ({
         authExpiry: null,
         userData: null,
       });
+    }
+  },
+  initializeWalletSocketListeners: () => {
+    console.log("Initializing wallet socket listeners...");
+    const socket = useSocketStore.getState().socket;
+    if (!socket) return;
+
+    try {
+      socket.emit("wallet:getBalance");
+      socket.on("wallet:balance", (balance) => {
+        set({
+          onSiteBalance: {
+            balance: balance.balance,
+            address: balance.address,
+          },
+        });
+      });
+
+      socket.on("wallet:error", (error) => {
+        console.error("Wallet error:", error);
+      });
+    } catch (error) {
+      console.error("Error initializing wallet socket listeners:", error);
     }
   },
 }));

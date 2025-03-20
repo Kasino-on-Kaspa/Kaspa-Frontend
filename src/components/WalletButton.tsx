@@ -3,10 +3,11 @@ import { Button } from "./ui/button";
 import useWalletStore from "@/store/walletStore";
 import { useEffect } from "react";
 import { Dialog, DialogTrigger, DialogContent } from "./ui/dialog";
-import { formatKAS } from "@/lib/utils";
+import { formatAddress, formatKAS } from "@/lib/utils";
 import Balance from "./Balance";
 import { NetworkType } from "@/types/kaspa";
 import { Icon } from "@iconify/react/dist/iconify.js";
+import useSocketStore from "@/store/socketStore";
 
 const networkMap = {
   kaspa_mainnet: "Mainnet",
@@ -17,6 +18,8 @@ const networkMap = {
 
 export default function WalletButton() {
   const wallet = useKaspaWallet();
+
+  const { connect } = useSocketStore();
 
   const {
     address,
@@ -31,6 +34,7 @@ export default function WalletButton() {
     disconnect,
     authenticate,
     initWallet,
+    onSiteBalance,
   } = useWalletStore();
 
   const handleConnect = async () => {
@@ -70,6 +74,12 @@ export default function WalletButton() {
     }
   }, [wallet, initWallet]);
 
+  useEffect(() => {
+    if (isAuthenticated) {
+      connect();
+    }
+  }, [isAuthenticated, connect]);
+
   return !address ? (
     <Button
       onClick={handleConnect}
@@ -107,8 +117,13 @@ export default function WalletButton() {
             </div>
           </div>
           <div className="flex items-center gap-2 mt-2">
-            <p className="text-base tracking-tighter font-Onest text-[#6fc7ba]">
-              {balance?.total ? formatKAS(balance.total) : "0.00000000"} KAS
+            <p className="text-base tracking-tighter font-light font-Onest text-[#6fc7ba]">
+              {balance?.total
+                ? formatKAS(balance.total)
+                : onSiteBalance?.balance
+                  ? formatKAS(Number(onSiteBalance.balance))
+                  : "0.00000000"}
+              KAS
             </p>
           </div>
         </button>
@@ -158,6 +173,58 @@ export default function WalletButton() {
           userBalance={formatKAS(balance?.total || 0)}
           userAddress={address}
         />
+        <div className="p-3 bg-white/5 rounded-2xl -mt-2">
+          <p className="text-xs font-Onest text-[#6fc7ba] pb-1">
+            Wallet Details
+          </p>
+          <div className="flex items-center gap-2 pb-1">
+            <Icon icon="ph:wallet" className="text-xs text-[#6fc7ba]" />
+            <p className="text-xs font-Onest text-[#6fc7ba]">Onsite Balance:</p>
+            <p className="text-xs font-Onest text-[#6fc7ba]">
+              {onSiteBalance?.balance
+                ? formatKAS(Number(onSiteBalance.balance))
+                : "0.00000000"}
+              KAS
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Icon icon="ph:globe-simple" className="text-xs text-[#6fc7ba]" />
+            <p className="text-xs font-Onest text-[#6fc7ba]">
+              Deposit Address:
+            </p>
+            <div className="flex items-center gap-1">
+              <p className="text-xs font-Onest text-[#6fc7ba]">
+                {formatAddress(onSiteBalance?.address || "")}
+              </p>
+              <button
+                className="text-xs font-Onest text-[#6fc7ba]"
+                onClick={() => {
+                  navigator.clipboard.writeText(onSiteBalance?.address || "");
+                }}
+              >
+                <Icon icon="ph:copy" className="text-xs cursor-pointer" />
+              </button>
+            </div>
+          </div>
+        </div>
+        <div className="p-3 bg-white/5 rounded-2xl -mt-2">
+          <p className="text-xs font-Onest text-[#6fc7ba] pb-1">
+            Deposit Kaspa
+          </p>
+          <div className="flex items-center gap-2 mt-1">
+            <input
+              type="text"
+              placeholder="Enter Amount"
+              className="w-full rounded-md bg-white/10  text-[#6fc7ba] text-[12px] h-8 px-2 outline-none"
+            />
+            <button className="w-fit px-3 rounded-md bg-[#6fc7ba] cursor-pointer text-[#333] hover:bg-[#6fc7ba]/90 text-[10px] h-8">
+              Deposit
+            </button>
+          </div>
+          <p className="text-xs font-Onest text-[#6fc7ba] mt-2">
+            Max: {formatKAS(balance?.total || 0)}
+          </p>
+        </div>
         {authError && (
           <div className="flex items-center gap-2 px-3 pb-1">
             <Icon
