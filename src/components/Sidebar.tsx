@@ -114,9 +114,11 @@ export default function Navbar() {
           ))}
         </div>
       </div>
-      <div className="space-y-3 mt-3 flex-1">
+      <div className="space-y-3 mt-3 flex-1 overflow-y-auto scrollbar rounded-xl">
         <PrizeFeed />
         <AffiliateCard />
+      </div>
+      <div className="mt-3">
         <WalletButton />
       </div>
     </div>

@@ -70,15 +70,7 @@ export default function WalletButton() {
     }
   }, [wallet, initWallet]);
 
-  useEffect(() => {
-    wallet?.getAccounts().then((accounts) => {
-      if (accounts.length > 0) {
-        setAddress(accounts[0]);
-      }
-    });
-  }, [network, wallet, setAddress]);
-
-  return !isAuthenticated ? (
+  return !address ? (
     <Button
       onClick={handleConnect}
       disabled={isConnecting}
@@ -101,9 +93,17 @@ export default function WalletButton() {
                 return (
                   <button
                     key={nM}
-                    onClick={() => {
-                      setNetwork(nM as NetworkType);
-                      wallet?.switchNetwork(nM as NetworkType);
+                    onClick={async () => {
+                      try {
+                        await wallet?.switchNetwork(nM as NetworkType);
+                        setNetwork(nM as NetworkType);
+                        const accounts = await wallet?.getAccounts();
+                        if (accounts && accounts.length > 0) {
+                          setAddress(accounts[0]);
+                        }
+                      } catch (error) {
+                        console.error("Error switching network:", error);
+                      }
                     }}
                     className="w-fit py-1 px-2 rounded-full bg-[#6fc7ba] cursor-pointer text-[#333] hover:bg-[#6fc7ba]/90 text-[10px]"
                     style={{
@@ -121,7 +121,7 @@ export default function WalletButton() {
             onClick={() => {
               handleDisconnect();
             }}
-            className="w-fit py-1 px-2 rounded-full bg-red-400 cursor-pointer text-[#333] text-white/80 font-Onest hover:bg-red-400/90 text-[10px]"
+            className="w-fit py-1 px-2 rounded-full bg-red-400 cursor-pointer text-[#333] font-Onest hover:bg-red-400/90 text-[10px]"
           >
             Disconnect
           </button>
