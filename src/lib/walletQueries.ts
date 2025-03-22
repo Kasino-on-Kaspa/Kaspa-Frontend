@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { authenticatedFetch } from "./fetchWrapper";
 import { NetworkType } from "@/types/kaspa";
+import { toast } from "sonner";
 
 interface UserData {
   username?: string;
@@ -152,15 +153,17 @@ export function useUpdateReferredBy() {
 
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
+          toast.error(errorData.message || "Failed to update referral code");
           throw new Error(
             errorData.message || "Failed to update referral code",
           );
         }
 
-        return response.json() as Promise<UserData>;
+        const data = await response.json();
+        return data as UserData;
       } catch (error) {
         if (error instanceof Error) {
-          throw new Error(error.message);
+          throw error;
         }
         throw new Error("An unexpected error occurred");
       }

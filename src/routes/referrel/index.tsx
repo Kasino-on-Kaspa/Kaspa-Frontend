@@ -59,7 +59,7 @@ export default function AffiliatePage() {
     isLoading: isUserDataLoading,
     refetch,
   } = useUserData();
-  const { mutate: updateReferredBy } = useUpdateReferredBy();
+  const { mutateAsync: updateReferredBy } = useUpdateReferredBy();
   const [referralCode, setReferralCode] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -72,9 +72,7 @@ export default function AffiliatePage() {
 
     setIsLoading(true);
     try {
-      updateReferredBy(referralCode);
-
-      toast.success("Referral code updated successfully");
+      await updateReferredBy(referralCode);
       refetch();
     } catch (error) {
       toast.error("Failed to update referral code");
