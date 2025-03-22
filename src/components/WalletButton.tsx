@@ -19,7 +19,7 @@ const networkMap = {
 export default function WalletButton() {
   const wallet = useKaspaWallet();
 
-  const { connect } = useSocketStore();
+  const { connect, disconnect: socketDisconnect } = useSocketStore();
 
   const {
     address,
@@ -61,8 +61,9 @@ export default function WalletButton() {
   const handleDisconnect = async () => {
     if (!wallet) return;
     try {
-      await wallet.disconnect(window.location.origin);
+      socketDisconnect();
       disconnect();
+      await wallet.disconnect(window.location.origin);
     } catch (error) {
       console.error("Error disconnecting wallet:", error);
     }

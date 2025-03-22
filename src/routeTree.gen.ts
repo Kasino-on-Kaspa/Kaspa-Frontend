@@ -10,85 +10,123 @@
 
 // Import Routes
 
-import { Route as rootRoute } from './routes/__root'
-import { Route as IndexImport } from './routes/index'
-import { Route as ComingSoonIndexImport } from './routes/coming-soon/index'
+import { Route as rootRoute } from "./routes/__root";
+import { Route as IndexImport } from "./routes/index";
+import { Route as ReferrelIndexImport } from "./routes/referrel/index";
+import { Route as ReferralIndexImport } from "./routes/referral/index";
+import { Route as ComingSoonIndexImport } from "./routes/coming-soon/index";
 
 // Create/Update Routes
 
 const IndexRoute = IndexImport.update({
-  id: '/',
-  path: '/',
+  id: "/",
+  path: "/",
   getParentRoute: () => rootRoute,
-} as any)
+} as any);
+
+const ReferrelIndexRoute = ReferrelIndexImport.update({
+  id: "/referrel/",
+  path: "/referrel/",
+  getParentRoute: () => rootRoute,
+} as any);
+
+const ReferralIndexRoute = ReferralIndexImport.update({
+  id: "/referral/",
+  path: "/referral/",
+  getParentRoute: () => rootRoute,
+} as any);
 
 const ComingSoonIndexRoute = ComingSoonIndexImport.update({
-  id: '/coming-soon/',
-  path: '/coming-soon/',
+  id: "/coming-soon/",
+  path: "/coming-soon/",
   getParentRoute: () => rootRoute,
-} as any)
+} as any);
 
 // Populate the FileRoutesByPath interface
 
-declare module '@tanstack/react-router' {
+declare module "@tanstack/react-router" {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexImport
-      parentRoute: typeof rootRoute
-    }
-    '/coming-soon/': {
-      id: '/coming-soon/'
-      path: '/coming-soon'
-      fullPath: '/coming-soon'
-      preLoaderRoute: typeof ComingSoonIndexImport
-      parentRoute: typeof rootRoute
-    }
+    "/": {
+      id: "/";
+      path: "/";
+      fullPath: "/";
+      preLoaderRoute: typeof IndexImport;
+      parentRoute: typeof rootRoute;
+    };
+    "/coming-soon/": {
+      id: "/coming-soon/";
+      path: "/coming-soon";
+      fullPath: "/coming-soon";
+      preLoaderRoute: typeof ComingSoonIndexImport;
+      parentRoute: typeof rootRoute;
+    };
+    "/referral/": {
+      id: "/referral/";
+      path: "/referral";
+      fullPath: "/referral";
+      preLoaderRoute: typeof ReferralIndexImport;
+      parentRoute: typeof rootRoute;
+    };
+    "/referrel/": {
+      id: "/referrel/";
+      path: "/referrel";
+      fullPath: "/referrel";
+      preLoaderRoute: typeof ReferrelIndexImport;
+      parentRoute: typeof rootRoute;
+    };
   }
 }
 
 // Create and export the route tree
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/coming-soon': typeof ComingSoonIndexRoute
+  "/": typeof IndexRoute;
+  "/coming-soon": typeof ComingSoonIndexRoute;
+  "/referral": typeof ReferralIndexRoute;
+  "/referrel": typeof ReferrelIndexRoute;
 }
 
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/coming-soon': typeof ComingSoonIndexRoute
+  "/": typeof IndexRoute;
+  "/coming-soon": typeof ComingSoonIndexRoute;
+  "/referral": typeof ReferralIndexRoute;
+  "/referrel": typeof ReferrelIndexRoute;
 }
 
 export interface FileRoutesById {
-  __root__: typeof rootRoute
-  '/': typeof IndexRoute
-  '/coming-soon/': typeof ComingSoonIndexRoute
+  __root__: typeof rootRoute;
+  "/": typeof IndexRoute;
+  "/coming-soon/": typeof ComingSoonIndexRoute;
+  "/referral/": typeof ReferralIndexRoute;
+  "/referrel/": typeof ReferrelIndexRoute;
 }
 
 export interface FileRouteTypes {
-  fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/coming-soon'
-  fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/coming-soon'
-  id: '__root__' | '/' | '/coming-soon/'
-  fileRoutesById: FileRoutesById
+  fileRoutesByFullPath: FileRoutesByFullPath;
+  fullPaths: "/" | "/coming-soon" | "/referral" | "/referrel";
+  fileRoutesByTo: FileRoutesByTo;
+  to: "/" | "/coming-soon" | "/referral" | "/referrel";
+  id: "__root__" | "/" | "/coming-soon/" | "/referral/" | "/referrel/";
+  fileRoutesById: FileRoutesById;
 }
 
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
-  ComingSoonIndexRoute: typeof ComingSoonIndexRoute
+  IndexRoute: typeof IndexRoute;
+  ComingSoonIndexRoute: typeof ComingSoonIndexRoute;
+  ReferralIndexRoute: typeof ReferralIndexRoute;
+  ReferrelIndexRoute: typeof ReferrelIndexRoute;
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ComingSoonIndexRoute: ComingSoonIndexRoute,
-}
+  ReferralIndexRoute: ReferralIndexRoute,
+  ReferrelIndexRoute: ReferrelIndexRoute,
+};
 
 export const routeTree = rootRoute
   ._addFileChildren(rootRouteChildren)
-  ._addFileTypes<FileRouteTypes>()
+  ._addFileTypes<FileRouteTypes>();
 
 /* ROUTE_MANIFEST_START
 {
@@ -97,7 +135,9 @@ export const routeTree = rootRoute
       "filePath": "__root.tsx",
       "children": [
         "/",
-        "/coming-soon/"
+        "/coming-soon/",
+        "/referral/",
+        "/referrel/"
       ]
     },
     "/": {
@@ -105,6 +145,12 @@ export const routeTree = rootRoute
     },
     "/coming-soon/": {
       "filePath": "coming-soon/index.tsx"
+    },
+    "/referral/": {
+      "filePath": "referral/index.tsx"
+    },
+    "/referrel/": {
+      "filePath": "referrel/index.tsx"
     }
   }
 }

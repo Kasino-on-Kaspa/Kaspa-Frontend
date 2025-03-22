@@ -81,29 +81,34 @@ export async function authenticatedFetch(
   input: RequestInfo | URL,
   init?: RequestInit,
 ): Promise<Response> {
-  const storedTokens = getStoredTokens();
-  if (!storedTokens) {
-    throw new Error("No authentication tokens available");
-  }
+  try {
+    const storedTokens = getStoredTokens();
+    if (!storedTokens) {
+      throw new Error("No authentication tokens available");
+    }
 
-  const headers = new Headers(init?.headers || {});
-  headers.set("Authorization", `Bearer ${storedTokens.accessToken}`);
+    const headers = new Headers(init?.headers || {});
+    headers.set("Authorization", `Bearer ${storedTokens.accessToken}`);
 
-  const response = await fetch(input, {
-    ...init,
-    headers,
-  });
-
-  if (response.status === 401) {
-    const newTokens = await refreshTokens(storedTokens.refreshToken);
-    setAuthTokens(newTokens);
-
-    headers.set("Authorization", `Bearer ${newTokens.accessToken}`);
-    return fetch(input, {
+    const response = await fetch(input, {
       ...init,
       headers,
     });
-  }
 
-  return response;
+    if (response.status === 401) {
+      const newTokens = await refreshTokens(storedTokens.refreshToken);
+      setAuthTokens(newTokens);
+
+      headers.set("Authorization", `Bearer ${newTokens.accessToken}`);
+      return fetch(input, {
+        ...init,
+        headers,
+      });
+    }
+
+    return response;
+  } catch (error) {
+    console.error("Error:", error);
+    throw error;
+  }
 }

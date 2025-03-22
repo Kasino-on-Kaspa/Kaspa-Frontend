@@ -3,6 +3,7 @@ import { NetworkType, Balance, KaspaWallet } from "@/types/kaspa";
 import { setAuthTokens, getStoredTokens, clearTokens } from "@/lib/auth";
 import { getMessageForSigning } from "@/lib/walletQueries";
 import useSocketStore from "./socketStore";
+import { authenticatedFetch } from "@/lib/auth";
 
 interface UserData {
   username?: string;
@@ -155,6 +156,7 @@ const useWalletStore = create<WalletState>((set, get) => ({
 
     try {
       const existingTokens = getStoredTokens();
+      console.log("Existing tokens:", existingTokens);
       if (existingTokens) {
         set({
           isAuthenticated: true,
@@ -193,11 +195,25 @@ const useWalletStore = create<WalletState>((set, get) => ({
         refreshToken: authData.refreshToken,
       });
 
+      const walletData = await authenticatedFetch(
+        `${import.meta.env.VITE_BACKEND_URL}/wallet/deposit`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ wallet_id: authData?.user.depositAddress }),
+        },
+      );
+
+      const walletDataJson = await walletData.json();
+
       set({
         isAuthenticated: true,
         authError: null,
         authExpiry: expiry,
-        userData: authData.user,
+        onSiteBalance: {
+          address: walletDataJson.address,
+          balance: walletDataJson.balance || 0,
+        },
       });
 
       const checkInterval = setInterval(() => {

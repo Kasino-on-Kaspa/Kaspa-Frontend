@@ -1,10 +1,12 @@
 import Marquee from "@/components/Marquee";
 import Sidebar from "@/components/Sidebar";
 import { createRootRoute, Outlet } from "@tanstack/react-router";
+import { Toaster } from "sonner";
 
 export const Route = createRootRoute({
   component: () => (
     <>
+      <Toaster />
       <Marquee />
       <Sidebar />
       <div className="md:ml-[245px] mt-10">
