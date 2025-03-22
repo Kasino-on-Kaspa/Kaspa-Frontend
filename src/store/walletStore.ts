@@ -242,6 +242,7 @@ const useWalletStore = create<WalletState>((set, get) => ({
     try {
       socket.emit("wallet:getBalance");
       socket.on("wallet:balance", (balance) => {
+        console.log("Balance:", balance);
         set({
           onSiteBalance: {
             balance: balance.balance,

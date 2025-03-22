@@ -12,21 +12,15 @@
 
 import { Route as rootRoute } from "./routes/__root";
 import { Route as IndexImport } from "./routes/index";
-import { Route as ReferrelIndexImport } from "./routes/referrel/index";
 import { Route as ReferralIndexImport } from "./routes/referral/index";
 import { Route as ComingSoonIndexImport } from "./routes/coming-soon/index";
+import { Route as GamesDicerollIndexImport } from "./routes/games/diceroll/index";
 
 // Create/Update Routes
 
 const IndexRoute = IndexImport.update({
   id: "/",
   path: "/",
-  getParentRoute: () => rootRoute,
-} as any);
-
-const ReferrelIndexRoute = ReferrelIndexImport.update({
-  id: "/referrel/",
-  path: "/referrel/",
   getParentRoute: () => rootRoute,
 } as any);
 
@@ -39,6 +33,12 @@ const ReferralIndexRoute = ReferralIndexImport.update({
 const ComingSoonIndexRoute = ComingSoonIndexImport.update({
   id: "/coming-soon/",
   path: "/coming-soon/",
+  getParentRoute: () => rootRoute,
+} as any);
+
+const GamesDicerollIndexRoute = GamesDicerollIndexImport.update({
+  id: "/games/diceroll/",
+  path: "/games/diceroll/",
   getParentRoute: () => rootRoute,
 } as any);
 
@@ -67,11 +67,11 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof ReferralIndexImport;
       parentRoute: typeof rootRoute;
     };
-    "/referrel/": {
-      id: "/referrel/";
-      path: "/referrel";
-      fullPath: "/referrel";
-      preLoaderRoute: typeof ReferrelIndexImport;
+    "/games/diceroll/": {
+      id: "/games/diceroll/";
+      path: "/games/diceroll";
+      fullPath: "/games/diceroll";
+      preLoaderRoute: typeof GamesDicerollIndexImport;
       parentRoute: typeof rootRoute;
     };
   }
@@ -83,14 +83,14 @@ export interface FileRoutesByFullPath {
   "/": typeof IndexRoute;
   "/coming-soon": typeof ComingSoonIndexRoute;
   "/referral": typeof ReferralIndexRoute;
-  "/referrel": typeof ReferrelIndexRoute;
+  "/games/diceroll": typeof GamesDicerollIndexRoute;
 }
 
 export interface FileRoutesByTo {
   "/": typeof IndexRoute;
   "/coming-soon": typeof ComingSoonIndexRoute;
   "/referral": typeof ReferralIndexRoute;
-  "/referrel": typeof ReferrelIndexRoute;
+  "/games/diceroll": typeof GamesDicerollIndexRoute;
 }
 
 export interface FileRoutesById {
@@ -98,15 +98,15 @@ export interface FileRoutesById {
   "/": typeof IndexRoute;
   "/coming-soon/": typeof ComingSoonIndexRoute;
   "/referral/": typeof ReferralIndexRoute;
-  "/referrel/": typeof ReferrelIndexRoute;
+  "/games/diceroll/": typeof GamesDicerollIndexRoute;
 }
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath;
-  fullPaths: "/" | "/coming-soon" | "/referral" | "/referrel";
+  fullPaths: "/" | "/coming-soon" | "/referral" | "/games/diceroll";
   fileRoutesByTo: FileRoutesByTo;
-  to: "/" | "/coming-soon" | "/referral" | "/referrel";
-  id: "__root__" | "/" | "/coming-soon/" | "/referral/" | "/referrel/";
+  to: "/" | "/coming-soon" | "/referral" | "/games/diceroll";
+  id: "__root__" | "/" | "/coming-soon/" | "/referral/" | "/games/diceroll/";
   fileRoutesById: FileRoutesById;
 }
 
@@ -114,14 +114,14 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute;
   ComingSoonIndexRoute: typeof ComingSoonIndexRoute;
   ReferralIndexRoute: typeof ReferralIndexRoute;
-  ReferrelIndexRoute: typeof ReferrelIndexRoute;
+  GamesDicerollIndexRoute: typeof GamesDicerollIndexRoute;
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ComingSoonIndexRoute: ComingSoonIndexRoute,
   ReferralIndexRoute: ReferralIndexRoute,
-  ReferrelIndexRoute: ReferrelIndexRoute,
+  GamesDicerollIndexRoute: GamesDicerollIndexRoute,
 };
 
 export const routeTree = rootRoute
@@ -137,7 +137,7 @@ export const routeTree = rootRoute
         "/",
         "/coming-soon/",
         "/referral/",
-        "/referrel/"
+        "/games/diceroll/"
       ]
     },
     "/": {
@@ -149,8 +149,8 @@ export const routeTree = rootRoute
     "/referral/": {
       "filePath": "referral/index.tsx"
     },
-    "/referrel/": {
-      "filePath": "referrel/index.tsx"
+    "/games/diceroll/": {
+      "filePath": "games/diceroll/index.tsx"
     }
   }
 }
