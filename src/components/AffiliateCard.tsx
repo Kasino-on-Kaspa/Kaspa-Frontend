@@ -42,10 +42,10 @@ export default function AffiliateCard() {
       </div>
 
       <Button
-        className="w-full rounded-md bg-[#6fc7ba] text-[#333] hover:bg-[#6fc7ba]/90 text-[10px] h-8"
-        // onClick={() => window.open("/affiliate", "_blank")}
+        className="w-full rounded-md bg-[#6fc7ba] text-[#333] hover:bg-[#6fc7ba]/90 text-[10px] h-8 cursor-pointer"
+        onClick={() => window.open("/referral", "_blank")}
       >
-        Coming Soon
+        Become an Affiliate
       </Button>
     </div>
   );
