@@ -130,7 +130,7 @@ export default function Navbar() {
 
       {/* Desktop Sidebar */}
       <div className="fixed top-0 left-0 h-screen mt-10 w-[245px] bg-[#1A1A1A] border-r border-white/10 hidden lg:block">
-        <nav className="fixed h-[calc(100vh-40px)] border-r border-white/10 flex-col p-4 z-30 bg-[#231f20] font-medium text-base w-[245px] overflow-y-auto scrollbar">
+        <nav className="h-[calc(100vh-40px)] border-r border-white/10 flex-col p-4 z-30 bg-[#231f20] font-medium text-base w-[245px] overflow-y-auto scrollbar">
           {sidebarContent}
         </nav>
       </div>
