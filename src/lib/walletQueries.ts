@@ -4,6 +4,10 @@ import { NetworkType } from "@/types/kaspa";
 
 interface UserData {
   username?: string;
+  referralCode?: string;
+  referredBy?: string;
+  referralCount?: number;
+  totalEarnings?: number;
 }
 
 interface MessageResponse {
@@ -81,10 +85,12 @@ export function useUserData() {
       const response = await authenticatedFetch(
         `${import.meta.env.VITE_BACKEND_URL}/users/me`,
       );
+
       if (!response.ok) throw new Error("Failed to fetch user data");
       return response.json();
     },
-    enabled: false,
+    staleTime: 30000, // Consider data fresh for 30 seconds
+    refetchInterval: 60000, // Refetch every minute
   });
 }
 
@@ -132,17 +138,32 @@ export function useUpdateReferredBy() {
 
   return useMutation({
     mutationFn: async (referralCode: string) => {
-      const response = await authenticatedFetch(
-        `${import.meta.env.VITE_BACKEND_URL}/users/referral`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ referralCode }),
-        },
-      );
+      try {
+        const response = await authenticatedFetch(
+          `${import.meta.env.VITE_BACKEND_URL}/users/me`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              referredBy: referralCode,
+            }),
+          },
+        );
 
-      if (!response.ok) throw new Error("Failed to update referral code");
-      return response.json() as Promise<UserData>;
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(
+            errorData.message || "Failed to update referral code",
+          );
+        }
+
+        return response.json() as Promise<UserData>;
+      } catch (error) {
+        if (error instanceof Error) {
+          throw new Error(error.message);
+        }
+        throw new Error("An unexpected error occurred");
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.userData });
@@ -168,4 +189,41 @@ export async function getMessageForSigning(
     console.error("Error generating message:", error);
     throw new Error("Failed to generate message for signing");
   }
+}
+
+// Wallet Balance Queries
+export function useWalletBalance() {
+  return useQuery({
+    queryKey: ["walletBalance"],
+    queryFn: async () => {
+      const response = await authenticatedFetch(
+        `${import.meta.env.VITE_BACKEND_URL}/wallet/balance`,
+      );
+      return response.json();
+    },
+    staleTime: 30000, // Consider data fresh for 30 seconds
+    refetchInterval: 60000, // Refetch every minute
+  });
+}
+
+export function useUpdateWalletBalance() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ address }: { address: string }) => {
+      const response = await authenticatedFetch(
+        `${import.meta.env.VITE_BACKEND_URL}/wallet/balance/update`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ address }),
+        },
+      );
+      return response.json();
+    },
+    onSuccess: () => {
+      // Invalidate and refetch wallet balance after successful update
+      queryClient.invalidateQueries({ queryKey: ["walletBalance"] });
+    },
+  });
 }

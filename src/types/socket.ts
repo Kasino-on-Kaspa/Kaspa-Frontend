@@ -89,4 +89,5 @@ export interface SocketState {
   connectionError: string | null;
   reconnect: () => void;
   connect: () => void;
+  disconnect: () => void;
 }
