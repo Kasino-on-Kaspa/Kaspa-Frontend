@@ -5,16 +5,9 @@ import { useEffect } from "react";
 import { Dialog, DialogTrigger, DialogContent } from "./ui/dialog";
 import { formatAddress, formatKAS } from "@/lib/utils";
 import Balance from "./Balance";
-import { NetworkType } from "@/types/kaspa";
+
 import { Icon } from "@iconify/react/dist/iconify.js";
 import useSocketStore from "@/store/socketStore";
-
-const networkMap = {
-  kaspa_mainnet: "Mainnet",
-  kaspa_testnet_10: "TN10",
-  kaspa_testnet_11: "TN11",
-  kaspa_devnet: "Devnet",
-};
 
 export default function WalletButton() {
   const wallet = useKaspaWallet();
@@ -24,12 +17,12 @@ export default function WalletButton() {
   const {
     address,
     balance,
-    network,
+
     isConnecting,
     isAuthenticated,
     authError,
     setAddress,
-    setNetwork,
+
     setIsConnecting,
     disconnect,
     authenticate,
@@ -130,37 +123,16 @@ export default function WalletButton() {
         </button>
       </DialogTrigger>
       <DialogContent className="bg-[#2a2627] border border-white/10 text-white rounded-3xl w-[300px] md:w-[400px]">
-        <div className="flex gap-2 items-center justify-between -mb-2">
-          {network && (
-            <div className="flex font-Onest items-center gap-2">
-              {Object.keys(networkMap).map((nM) => {
-                return (
-                  <button
-                    key={nM}
-                    onClick={async () => {
-                      try {
-                        await wallet?.switchNetwork(nM as NetworkType);
-                        setNetwork(nM as NetworkType);
-                        const accounts = await wallet?.getAccounts();
-                        if (accounts && accounts.length > 0) {
-                          setAddress(accounts[0]);
-                        }
-                      } catch (error) {
-                        console.error("Error switching network:", error);
-                      }
-                    }}
-                    className="w-fit py-1 px-2 rounded-full bg-[#6fc7ba] cursor-pointer text-[#333] hover:bg-[#6fc7ba]/90 text-[10px]"
-                    style={{
-                      backgroundColor: network === nM ? "#6fc7ba" : "#353132",
-                      color: network === nM ? "#333" : "#fff",
-                    }}
-                  >
-                    {networkMap[nM as keyof typeof networkMap]}
-                  </button>
-                );
-              })}
-            </div>
-          )}
+        <div className="flex gap-2 items-center justify-between -mb-2 mx-1">
+          <div className="flex items-center gap-2">
+            <Icon
+              icon="emojione:full-moon"
+              className="text-lg text-[#6fc7ba]"
+            />
+            <p className="text-sm font-Onest font-extralight tracking-tight text-[#6fc7ba]">
+              Callisto Wallet
+            </p>
+          </div>
           <button
             onClick={() => {
               handleDisconnect();

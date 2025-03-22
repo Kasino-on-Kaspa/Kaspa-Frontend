@@ -27,6 +27,8 @@ const useDicerollStore = create<DicerollStore>((set) => ({
       },
     );
 
+    dierollSocket.connect();
+
     set({ dierollSocket });
   },
   startSession() {
@@ -42,6 +44,7 @@ const useDicerollStore = create<DicerollStore>((set) => ({
   },
   placeBet(betData: z.infer<typeof DieRollBetType>) {
     const dierollSocket = useDicerollStore.getState().dierollSocket;
+
     if (dierollSocket) {
       dierollSocket.emit(
         "dieroll:place_bet",

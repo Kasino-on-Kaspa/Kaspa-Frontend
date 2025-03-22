@@ -29,7 +29,6 @@ export default function DiceRollPage() {
 
   const {
     dierollSocket,
-    sessionData,
     rollResult,
     initializeGame,
     startSession,
@@ -93,14 +92,15 @@ export default function DiceRollPage() {
       return;
     }
 
-    if (parseFloat(betAmount) > (balance?.total || 0)) {
-      toast.error("Insufficient balance");
-      return;
-    }
+    // if (parseFloat(betAmount) > (balance?.total || 0)) {
+    //   toast.error("Insufficient balance");
+    //   return;
+    // }
 
     setIsRolling(true);
 
     const betData = DieRollBetType.parse({
+      client_seed: "1234567890",
       amount: betAmount,
       condition: "OVER",
       target: targetNumber,
