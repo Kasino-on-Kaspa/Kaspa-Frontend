@@ -15,6 +15,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import sha256 from "crypto-js/sha256";
+import Hex from "crypto-js/enc-hex";
 
 interface RollResult {
   roll: number;
@@ -26,6 +28,9 @@ interface RollHistory {
   multiplier: number;
   profit: number;
   timestamp: number;
+  clientSeed: string;
+  serverSeed?: string;
+  serverSeedHash: string;
 }
 
 interface AutoBetSettings {
@@ -51,6 +56,7 @@ export default function DieRollGame() {
     rollResult,
     gameSessionError,
     serverSeedHash,
+    serverSeed,
     initializeGame,
     placeBet,
     startSession,
@@ -95,6 +101,9 @@ export default function DieRollGame() {
   const [lastRollValue, setLastRollValue] = useState<number | null>(null);
   const [showRollAnimation, setShowRollAnimation] = useState(false);
 
+  // Add state for the bet details modal
+  const [selectedBet, setSelectedBet] = useState<RollHistory | null>(null);
+
   // Error handling
   useEffect(() => {
     if (gameSessionError) {
@@ -110,11 +119,15 @@ export default function DieRollGame() {
   useEffect(() => {
     if (!rollResult) return;
 
-    // Extract roll number from result
+    // Extract roll number and server seed from result
     let roll: number;
+    let currentServerSeed: string | undefined;
+    console.log("rollResult", rollResult);
+
     if (typeof rollResult === "object" && "serverSeed" in rollResult) {
       // Handle case where rollResult is an object with serverSeed
       roll = (rollResult as RollResult).roll;
+      currentServerSeed = serverSeed as string;
     } else if (typeof rollResult === "number") {
       // Handle case where rollResult is a direct number
       roll = rollResult;
@@ -127,6 +140,7 @@ export default function DieRollGame() {
     const currentCondition = condition;
     const currentTarget = targetNumber;
     const currentBetAmount = betAmount;
+    const currentClientSeed = clientSeed;
 
     const isWin =
       currentCondition === "OVER"
@@ -145,6 +159,9 @@ export default function DieRollGame() {
       multiplier,
       profit,
       timestamp: Date.now(),
+      clientSeed: currentClientSeed,
+      serverSeed: serverSeed || undefined,
+      serverSeedHash: serverSeedHash || "",
     };
 
     console.log("result", result);
@@ -158,7 +175,7 @@ export default function DieRollGame() {
       setShowRollAnimation(false);
     }, 3000);
 
-    setRollHistory((prev) => [result, ...prev].slice(0, 10));
+    setRollHistory((prev) => [result, ...prev]);
     setIsRolling(false);
 
     // Update total profit for auto betting
@@ -174,7 +191,7 @@ export default function DieRollGame() {
         toast.error(`You lost ${parseFloat(currentBetAmount).toFixed(8)} KAS`);
       }
     }
-  }, [rollResult]); // Only depend on rollResult changes
+  }, [serverSeed]);
 
   // Handle auto bet result and continue or stop based on settings
   const handleAutoBetResult = (isWin: boolean, profit: number) => {
@@ -902,13 +919,13 @@ export default function DieRollGame() {
     </div>
   );
 
-  // Create a BetHistoryBubbles component
+  // Update the BetHistoryBubbles component to show server seed info
   const BetHistoryBubbles = () => {
-    // Only show the 5 most recent bets
-    const recentBets = rollHistory.slice(0, 10);
+    // Get all bets
+    const recentBets = rollHistory;
 
     return (
-      <div className="flex justify-start gap-2 mb-4 overflow-x-hidden w-full ">
+      <div className="flex justify-start gap-2 mb-4 overflow-x-auto w-full">
         {recentBets.map((bet, index) => {
           const isWin =
             condition === "OVER"
@@ -918,15 +935,159 @@ export default function DieRollGame() {
           return (
             <div
               key={index}
-              className={`min-w-12 aspect-square rounded-full flex items-center justify-center text-black font-bold ${
-                isWin ? "bg-[#6fc7ba]" : "bg-red-500"
-              }`}
+              className="relative group"
+              onClick={() => setSelectedBet(bet)}
             >
-              {bet.roll}
+              <div
+                className={`min-w-12 h-12 aspect-square rounded-full flex items-center justify-center text-black font-bold 
+                ${isWin ? "bg-[#6fc7ba]" : "bg-red-500"} 
+                cursor-pointer hover:opacity-90 transition-opacity`}
+              >
+                {bet.roll}
+              </div>
+
+              {/* Tooltip showing server seed */}
+              {bet.serverSeed && (
+                <div className="absolute left-1/2 -translate-x-1/2 -top-10 bg-black/90 text-white text-xs p-1 rounded w-28 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 text-center truncate">
+                  Seed: {bet.serverSeed.substring(0, 8)}...
+                </div>
+              )}
             </div>
           );
         })}
       </div>
+    );
+  };
+
+  // Update the BetDetailsModal to include game hash calculation
+  const BetDetailsModal = () => {
+    if (!selectedBet) return null;
+
+    const isWin =
+      condition === "OVER"
+        ? selectedBet.roll >= targetNumber
+        : selectedBet.roll <= targetNumber;
+
+    // Calculate the game hash
+    const calculateGameHash = () => {
+      if (!selectedBet?.serverSeed) return "Server seed not revealed yet";
+
+      const combinedSeed = `${selectedBet.serverSeed}${selectedBet.clientSeed}`;
+      return sha256(combinedSeed).toString(Hex);
+    };
+
+    const gameHash = calculateGameHash();
+
+    return (
+      <Dialog open={!!selectedBet} onOpenChange={() => setSelectedBet(null)}>
+        <DialogContent className="bg-[#1a1718] border-[#6fc7ba]/20 text-white max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-[#6fc7ba] flex items-center gap-2">
+              <div
+                className={`w-6 h-6 rounded-full flex items-center justify-center text-black font-bold text-xs ${
+                  isWin ? "bg-[#6fc7ba]" : "bg-red-500"
+                }`}
+              >
+                {selectedBet.roll}
+              </div>
+              <span>{isWin ? "Win" : "Loss"} Details</span>
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <h3 className="text-sm font-medium text-white/70 mb-1">
+                  Roll Result
+                </h3>
+                <div className="text-lg font-bold text-white">
+                  {selectedBet.roll}
+                </div>
+              </div>
+              <div>
+                <h3 className="text-sm font-medium text-white/70 mb-1">
+                  Target
+                </h3>
+                <div className="text-lg font-bold text-white">
+                  {condition} {targetNumber}
+                </div>
+              </div>
+              <div>
+                <h3 className="text-sm font-medium text-white/70 mb-1">
+                  Multiplier
+                </h3>
+                <div className="text-lg font-bold text-white">
+                  {selectedBet.multiplier.toFixed(4)}×
+                </div>
+              </div>
+              <div>
+                <h3 className="text-sm font-medium text-white/70 mb-1">
+                  Profit
+                </h3>
+                <div
+                  className={`text-lg font-bold ${
+                    selectedBet.profit >= 0 ? "text-[#6fc7ba]" : "text-red-500"
+                  }`}
+                >
+                  {selectedBet.profit >= 0 ? "+" : ""}
+                  {selectedBet.profit.toFixed(8)} KAS
+                </div>
+              </div>
+            </div>
+
+            <div className="border-t border-[#3a3637] pt-4">
+              <h3 className="text-sm font-bold text-[#6fc7ba] mb-3">
+                Provably Fair Verification
+              </h3>
+
+              <div className="space-y-3">
+                <div>
+                  <h4 className="text-sm font-medium text-white/70 mb-1">
+                    Client Seed
+                  </h4>
+                  <div className="bg-[#2a2627] p-2 rounded text-xs font-mono overflow-x-auto text-white">
+                    {selectedBet.clientSeed}
+                  </div>
+                </div>
+
+                <>
+                  <div>
+                    <h4 className="text-sm font-medium text-white/70 mb-1">
+                      Server Seed
+                    </h4>
+                    <div className="bg-[#2a2627] p-2 rounded text-xs font-mono overflow-x-auto text-white">
+                      {selectedBet.serverSeed}
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 className="text-sm font-medium text-white/70 mb-1">
+                      Game Hash (SHA256)
+                    </h4>
+                    <div className="bg-[#2a2627] p-2 rounded text-xs font-mono overflow-x-auto text-white">
+                      {gameHash}
+                    </div>
+                    <p className="text-xs text-white/50 mt-1">
+                      SHA256(clientSeed + serverSeed)
+                    </p>
+                  </div>
+                </>
+              </div>
+
+              <div className="mt-4 text-xs text-white/70">
+                <p>
+                  The combination of your client seed and our server seed
+                  determines the outcome of each bet.
+                </p>
+                <p className="mt-1">
+                  You can verify the fairness of this bet by checking these
+                  values against the roll result.
+                </p>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     );
   };
 
@@ -1126,6 +1287,9 @@ export default function DieRollGame() {
           <GameStats />
         </div>
       </div>
+
+      {/* Bet Details Modal */}
+      <BetDetailsModal />
     </div>
   );
 }
