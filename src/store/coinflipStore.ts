@@ -36,15 +36,7 @@ const useCoinflipStore = create<CoinflipStore>((set, get) => ({
       const coinflipState = get();
       coinflipState.initializeListeners();
 
-      if (!coinflipState.sessionData) {
-        coinflipState.startSession();
-      } else {
-        set({
-          serverSeed: coinflipState.serverSeed,
-          sessionData: coinflipState.sessionData,
-          isConnected: true,
-        });
-      }
+      coinflipState.startSession();
     } catch (error) {
       console.error(error);
       set({ gameSessionError: error as string });
@@ -65,6 +57,7 @@ const useCoinflipStore = create<CoinflipStore>((set, get) => ({
               serverSeedHash,
               sessionData,
               isConnected: true,
+              gameState: sessionData?.sessionId ? "FLIP_CHOICE" : null,
             });
           },
         );
@@ -99,11 +92,11 @@ const useCoinflipStore = create<CoinflipStore>((set, get) => ({
 
       coinflipSocket.on(
         CoinFlipServerMessage.GAME_CHANGE_STATE,
-        ({ session, state }) => {
-          console.log("Game State:", state);
+        ({ session, new_state }) => {
+          console.log("Game State:", new_state);
           set({
             sessionData: session,
-            gameState: state,
+            gameState: new_state,
           });
         },
       );

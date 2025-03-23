@@ -17,6 +17,7 @@ export default function CoinflipGame() {
     gameState,
     serverSeed,
     gameSessionError,
+    sessionCleanup,
   } = useCoinflipStore();
 
   const [betAmount, setBetAmount] = useState<string>("10");
@@ -36,6 +37,7 @@ export default function CoinflipGame() {
   }, [sessionData]);
 
   const handleStartGame = () => {
+    sessionCleanup();
     setHasStarted(true);
     setGameEnded(false);
     if (!sessionData) {
@@ -212,7 +214,7 @@ export default function CoinflipGame() {
 
         {/* Coin Selection - Only show after placing bet */}
         {sessionData?.sessionId &&
-          gameState === "PLAYER_TURN" &&
+          gameState === "FLIP_CHOICE" &&
           !isFlipping && (
             <>
               <h3 className="text-sm font-medium text-white/90 text-center mb-2">
@@ -255,14 +257,14 @@ export default function CoinflipGame() {
             >
               Place Bet
             </Button>
-          ) : gameState === "PLAYER_TURN" && !isFlipping ? (
+          ) : gameState === "FLIP_CHOICE" && !isFlipping ? (
             <Button
               className="bg-[#6fc7ba] text-[#333] hover:bg-[#6fc7ba]/90 px-8"
               onClick={handleFlip}
             >
               Flip Coin
             </Button>
-          ) : flipResult === selectedSide && !isFlipping ? (
+          ) : gameState === "NEXT_CHOICE" ? (
             <div className="flex gap-4">
               <Button
                 className="bg-[#6fc7ba] text-[#333] hover:bg-[#6fc7ba]/90"

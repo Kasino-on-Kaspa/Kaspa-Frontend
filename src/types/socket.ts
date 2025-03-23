@@ -70,10 +70,10 @@ export interface ServerToClientEvents {
   // Coinflip events
   [CoinFlipServerMessage.GAME_CHANGE_STATE]: ({
     session,
-    state,
+    new_state,
   }: {
     session: TCoinflipSessionJSON;
-    state: string;
+    new_state: string;
   }) => void;
   [CoinFlipServerMessage.FLIP_RESULT]: (data: {
     session: TCoinflipSessionJSON;
