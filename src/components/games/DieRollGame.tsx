@@ -31,6 +31,8 @@ interface RollHistory {
   clientSeed: string;
   serverSeed?: string;
   serverSeedHash: string;
+  target: number;
+  condition: "OVER" | "UNDER";
 }
 
 interface AutoBetSettings {
@@ -146,10 +148,7 @@ export default function DieRollGame() {
       currentCondition === "OVER"
         ? roll >= currentTarget
         : roll <= currentTarget;
-    const multiplier =
-      currentCondition === "OVER"
-        ? 100 / (100 - currentTarget)
-        : 100 / currentTarget;
+    const multiplier = calculateMultiplier(currentCondition, currentTarget);
     const profit = isWin
       ? parseFloat(currentBetAmount) * multiplier - parseFloat(currentBetAmount)
       : -parseFloat(currentBetAmount);
@@ -162,6 +161,8 @@ export default function DieRollGame() {
       clientSeed: currentClientSeed,
       serverSeed: serverSeed || undefined,
       serverSeedHash: serverSeedHash || "",
+      target: currentTarget,
+      condition: currentCondition,
     };
 
     console.log("result", result);
@@ -447,10 +448,33 @@ export default function DieRollGame() {
     };
   }, []);
 
-  const calculateMultiplier = () => {
-    return condition === "OVER"
-      ? (100 / (100 - targetNumber)).toFixed(4)
-      : (100 / targetNumber).toFixed(4);
+  const calculateMultiplier = (
+    inputCondition: "OVER" | "UNDER" = condition,
+    inputTarget: number = targetNumber,
+    houseEdge: number = 2,
+  ): number => {
+    // Validate inputs
+    if (inputTarget < 1 || inputTarget > 99) {
+      throw new Error("Target must be between 1 and 99");
+    }
+    if (houseEdge < 0 || houseEdge > 100) {
+      throw new Error("House edge must be between 0 and 100");
+    }
+
+    // Calculate win probability
+    const winProbability =
+      inputCondition === "OVER"
+        ? (100 - inputTarget) / 100 // Probability of rolling > target
+        : inputTarget / 100; // Probability of rolling ≤ target
+
+    // Calculate fair multiplier (without house edge)
+    const fairMultiplier = 1 / winProbability;
+
+    // Apply house edge
+    const multiplierWithEdge = fairMultiplier * (1 - houseEdge / 100);
+
+    // Return multiplier with 4 decimal places
+    return multiplierWithEdge;
   };
 
   const calculateWinChance = () => {
@@ -467,7 +491,7 @@ export default function DieRollGame() {
   // Calculate estimated profit on win
   const calculateProfit = () => {
     if (!betAmount || parseFloat(betAmount) <= 0) return "0.00000000";
-    const mult = parseFloat(calculateMultiplier());
+    const mult = calculateMultiplier();
     return (parseFloat(betAmount) * mult - parseFloat(betAmount)).toFixed(8);
   };
 
@@ -886,7 +910,7 @@ export default function DieRollGame() {
         <div className="text-white/70 text-xs">Multiplier</div>
         <div className="flex items-center">
           <span className="text-white text-lg font-semibold">
-            {calculateMultiplier()}
+            {calculateMultiplier().toFixed(4)}
           </span>
           <span className="text-white/70 ml-1">×</span>
         </div>
@@ -928,9 +952,9 @@ export default function DieRollGame() {
       <div className="flex justify-start gap-2 mb-4 overflow-x-hidden w-full">
         {recentBets.map((bet, index) => {
           const isWin =
-            condition === "OVER"
-              ? bet.roll >= targetNumber
-              : bet.roll <= targetNumber;
+            bet.condition === "OVER"
+              ? bet.roll >= bet.target
+              : bet.roll <= bet.target;
 
           return (
             <div
@@ -964,9 +988,9 @@ export default function DieRollGame() {
     if (!selectedBet) return null;
 
     const isWin =
-      condition === "OVER"
-        ? selectedBet.roll >= targetNumber
-        : selectedBet.roll <= targetNumber;
+      selectedBet.condition === "OVER"
+        ? selectedBet.roll >= selectedBet.target
+        : selectedBet.roll <= selectedBet.target;
 
     // Calculate the game hash
     const calculateGameHash = () => {
@@ -1009,7 +1033,7 @@ export default function DieRollGame() {
                   Target
                 </h3>
                 <div className="text-lg font-bold text-white">
-                  {condition} {targetNumber}
+                  {selectedBet.condition} {selectedBet.target}
                 </div>
               </div>
               <div>
@@ -1254,7 +1278,10 @@ export default function DieRollGame() {
               </div>
               <div
                 ref={sliderRef}
-                className="absolute w-full h-3 bg-gradient-to-r from-red-500 to-[#6fc7ba] rounded-full top-10 cursor-pointer"
+                className="absolute w-full h-3 rounded-full top-10 cursor-pointer"
+                style={{
+                  background: `linear-gradient(${condition === "OVER" ? 90 : 270}deg, rgba(251,44,54,1) 0%, rgba(111,199,186,1) 100%)`,
+                }}
               >
                 {/* Slider Thumb */}
                 <div
