@@ -925,7 +925,7 @@ export default function DieRollGame() {
     const recentBets = rollHistory;
 
     return (
-      <div className="flex justify-start gap-2 mb-4 overflow-x-auto w-full">
+      <div className="flex justify-start gap-2 mb-4 overflow-x-hidden w-full">
         {recentBets.map((bet, index) => {
           const isWin =
             condition === "OVER"
