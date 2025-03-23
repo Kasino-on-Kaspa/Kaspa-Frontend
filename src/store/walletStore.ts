@@ -265,6 +265,10 @@ const useWalletStore = create<WalletState>((set, get) => ({
         },
       );
     } catch (error) {
+      set({
+        isAuthenticated: false,
+        authError: "Error initializing wallet socket listeners",
+      });
       console.error("Error initializing wallet socket listeners:", error);
     }
   },

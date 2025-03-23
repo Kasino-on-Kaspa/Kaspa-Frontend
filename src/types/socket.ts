@@ -1,6 +1,12 @@
 import { Socket } from "socket.io-client";
 import { CoinFlipClientMessage, CoinFlipServerMessage } from "./coinflip";
-import { DieRollClientMessage, DieRollServerMessage } from "./dieroll";
+import {
+  DieRollClientMessage,
+  DieRollServerMessage,
+  TDieRollAck,
+  TDieRollGameResult,
+  TDierollSessionJSON,
+} from "./dieroll";
 import { User } from "./user";
 
 /**
@@ -44,10 +50,13 @@ export interface ClientToServerEvents {
   // Dieroll events
   [DieRollClientMessage.PLACE_BET]: (
     bet_data: any,
-    ack: (response: { success: boolean; error?: string }) => void,
+    ack: (ackStatus: TDieRollAck) => void,
   ) => void;
-  [DieRollClientMessage.GET_SESSION_SEEDS]: (
-    callback: (serverSeedHash: string) => void,
+  [DieRollClientMessage.GET_SESSION]: (
+    callback: (
+      serverSeedHash: string,
+      sessionData: TDierollSessionJSON,
+    ) => void,
   ) => void;
 
   // Default Socket.IO events
@@ -71,8 +80,8 @@ export interface ServerToClientEvents {
   [CoinFlipServerMessage.GAME_ENDED]: () => void;
 
   // Dieroll events
-  [DieRollServerMessage.ROLL_RESULT]: (result: any) => void;
-  [DieRollServerMessage.GAME_ENDED]: () => void;
+  [DieRollServerMessage.ROLL_RESULT]: (result: TDieRollGameResult) => void;
+  [DieRollServerMessage.GAME_ENDED]: (result: TDieRollGameResult) => void;
 }
 
 /**

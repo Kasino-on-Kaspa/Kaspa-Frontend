@@ -1,5 +1,4 @@
 import { create } from "zustand";
-import { io } from "socket.io-client";
 import { z } from "zod";
 import {
   DicerollStore,
@@ -7,68 +6,115 @@ import {
   DieRollBetType,
   TDieRollAck,
   TDieRollGameResult,
+  DieRollServerMessage,
+  DieRollClientMessage,
 } from "@/types/dieroll";
-
-const useDicerollStore = create<DicerollStore>((set) => ({
-  dierollSocket: null,
+import { getStoredTokens } from "@/lib/auth";
+import useSocketStore from "./socketStore";
+const useDicerollStore = create<DicerollStore>((set, get) => ({
+  isConnected: false,
   sessionData: null,
   serverSeedHash: null,
   gameSessionError: null,
   rollResult: null,
+
   initializeGame() {
-    const dierollSocket = io(
-      import.meta.env.VITE_SOCKET_URL + "/games/dieroll",
-      {
-        transports: ["websocket", "polling"],
-        autoConnect: false,
-        reconnection: true,
-        reconnectionAttempts: 5,
-        reconnectionDelay: 1000,
-      },
-    );
+    const dierollSocket = useSocketStore.getState().socket;
+    try {
+      const tokens = getStoredTokens();
+      if (!tokens?.accessToken) {
+        throw new Error("No access token available");
+      }
 
-    dierollSocket.connect();
+      if (!dierollSocket) {
+        throw new Error("No dieroll socket available");
+      }
 
-    set({ dierollSocket });
-  },
-  startSession() {
-    const dierollSocket = useDicerollStore.getState().dierollSocket;
-    if (dierollSocket) {
-      dierollSocket.emit(
-        "dieroll:get_session",
-        (serverSeedHash: string, sessionData: TDierollSessionJSON) => {
-          set({ serverSeedHash, sessionData });
-        },
-      );
+      const dicerollState = get();
+      dicerollState.intializeListeners();
+      if (!dicerollState.sessionData) {
+        dicerollState.startSession();
+      }
+    } catch (error) {
+      console.error("Error initializing dieroll socket:", error);
+      set({ gameSessionError: "Failed to initialize game" });
     }
   },
-  placeBet(betData: z.infer<typeof DieRollBetType>) {
-    const dierollSocket = useDicerollStore.getState().dierollSocket;
 
-    if (dierollSocket) {
+  startSession() {
+    const dierollSocket = useSocketStore.getState().socket;
+    if (dierollSocket?.connected) {
+      console.log("Requesting dieroll session...");
       dierollSocket.emit(
-        "dieroll:place_bet",
+        DieRollClientMessage.GET_SESSION,
+        (serverSeedHash: string, sessionData: TDierollSessionJSON) => {
+          console.log("Received session data:", {
+            serverSeedHash,
+            sessionData,
+          });
+          set({ serverSeedHash, sessionData, isConnected: true });
+        },
+      );
+    } else {
+      console.error("Socket not connected when trying to start session");
+      set({ gameSessionError: "Not connected to game server" });
+    }
+  },
+
+  placeBet(betData: z.infer<typeof DieRollBetType>) {
+    const dierollSocket = useSocketStore.getState().socket;
+    if (dierollSocket?.connected) {
+      console.log("Placing bet:", betData);
+      dierollSocket.emit(
+        DieRollClientMessage.PLACE_BET,
         betData,
         (ackStatus: TDieRollAck) => {
+          console.log("Bet acknowledgment:", ackStatus);
           if (ackStatus.status === "SUCCESS") {
-            set({ sessionData: ackStatus.session });
+            set({ sessionData: ackStatus.session, gameSessionError: null });
           } else {
             set({ gameSessionError: ackStatus.message });
           }
         },
       );
+    } else {
+      console.error("Socket not connected when trying to place bet");
+      set({ gameSessionError: "Not connected to game server" });
     }
   },
+
   intializeListeners() {
-    const dierollSocket = useDicerollStore.getState().dierollSocket;
+    const dierollSocket = useSocketStore.getState().socket;
+    if (dierollSocket?.connected) {
+      dierollSocket.on(
+        DieRollServerMessage.ROLL_RESULT,
+        (result: TDieRollGameResult) => {
+          console.log("Roll result received:", result);
+          set({ rollResult: result });
+        },
+      );
 
+      dierollSocket.on(
+        DieRollServerMessage.GAME_ENDED,
+        (result: TDieRollGameResult) => {
+          console.log("Game ended:", result);
+          set({ rollResult: result });
+        },
+      );
+    } else {
+      console.error("Socket not connected when trying to initialize listeners");
+    }
+  },
+
+  cleanup() {
+    const dierollSocket = useSocketStore.getState().socket;
     if (dierollSocket) {
-      dierollSocket.on("dieroll:roll_result", (result: TDieRollGameResult) => {
-        set({ rollResult: result });
-      });
-
-      dierollSocket.on("dieroll:game_ended", (result: TDieRollGameResult) => {
-        set({ rollResult: result });
+      dierollSocket.disconnect();
+      set({
+        sessionData: null,
+        serverSeedHash: null,
+        gameSessionError: null,
+        rollResult: null,
       });
     }
   },
