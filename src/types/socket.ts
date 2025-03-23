@@ -81,7 +81,11 @@ export interface ServerToClientEvents {
 
   // Dieroll events
   [DieRollServerMessage.ROLL_RESULT]: (result: TDieRollGameResult) => void;
-  [DieRollServerMessage.GAME_ENDED]: (result: TDieRollGameResult) => void;
+  [DieRollServerMessage.GAME_ENDED]: ({
+    serverSeed,
+  }: {
+    serverSeed: string;
+  }) => void;
 }
 
 /**

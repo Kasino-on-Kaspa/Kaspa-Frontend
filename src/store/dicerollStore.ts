@@ -17,6 +17,7 @@ const useDicerollStore = create<DicerollStore>((set, get) => ({
   serverSeedHash: null,
   gameSessionError: null,
   rollResult: null,
+  serverSeed: null,
 
   initializeGame() {
     const dierollSocket = useSocketStore.getState().socket;
@@ -96,9 +97,9 @@ const useDicerollStore = create<DicerollStore>((set, get) => ({
 
       dierollSocket.on(
         DieRollServerMessage.GAME_ENDED,
-        (result: TDieRollGameResult) => {
-          console.log("Game ended:", result);
-          set({ rollResult: result });
+        ({ serverSeed }: { serverSeed: string }) => {
+          console.log("Game ended:", serverSeed);
+          set({ serverSeed: serverSeed });
         },
       );
     } else {

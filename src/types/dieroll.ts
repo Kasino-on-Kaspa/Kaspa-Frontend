@@ -35,6 +35,7 @@ export interface GameStatePayload {
 export interface DicerollStore {
   isConnected: boolean;
   sessionData: TDierollSessionJSON | null;
+  serverSeed: string | null;
   gameSessionError: string | null;
   serverSeedHash: string | null;
   rollResult: TDieRollGameResult | null;
