@@ -27,6 +27,8 @@ export type TCoinflipSessionJSON = {
 
 export interface CoinflipStore {
   isConnected: boolean;
+  flipResult: TCoinflipSessionGameResult | null;
+  gameState: string | null;
   sessionData: TCoinflipSessionJSON | null;
   serverSeed: string | null;
   gameSessionError: string | null;
@@ -35,9 +37,17 @@ export interface CoinflipStore {
   startSession: () => void;
   initializeListeners: () => void;
   sessionCleanup: () => void;
-  getSessionSeed: () => void;
-  createBet: () => void;
-  flipCoin: () => void;
-  continueBet: () => void;
-  sessionNext: () => void;
+  createBet: (clientSeed: string, betAmount: string) => void;
+  flipCoin: (choice: TCoinflipSessionClientGameData) => void;
+  sessionNext: (option: "CASHOUT" | "CONTINUE") => void;
 }
+
+export type TCoinflipAck =
+  | {
+      status: "SUCCESS";
+      session: TCoinflipSessionJSON;
+    }
+  | {
+      status: "ERROR";
+      message: string;
+    };

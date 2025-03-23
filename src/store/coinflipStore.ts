@@ -1,6 +1,9 @@
 import {
   CoinFlipClientMessage,
+  CoinFlipServerMessage,
   CoinflipStore,
+  TCoinflipAck,
+  TCoinflipSessionClientGameData,
   TCoinflipSessionJSON,
 } from "@/types/coinflip";
 import { create } from "zustand";
@@ -9,13 +12,17 @@ import { getStoredTokens } from "@/lib/auth";
 
 const useCoinflipStore = create<CoinflipStore>((set, get) => ({
   isConnected: false,
+  flipResult: null,
   sessionData: null,
+  gameState: null,
   serverSeed: null,
   gameSessionError: null,
   serverSeedHash: null,
   initializeGame: () => {
     try {
       const coinflipSocket = useSocketStore.getState().socket;
+
+      console.log("Coinflip socket:", coinflipSocket);
 
       const tokens = getStoredTokens();
       if (!tokens?.accessToken) {
@@ -46,6 +53,8 @@ const useCoinflipStore = create<CoinflipStore>((set, get) => ({
         coinflipSocket.emit(
           CoinFlipClientMessage.GET_SESSION,
           (serverSeedHash: string, sessionData?: TCoinflipSessionJSON) => {
+            console.log("Coinflip Session received:", serverSeedHash);
+            console.log("Session Data:", sessionData);
             set({
               serverSeedHash,
               sessionData,
@@ -59,12 +68,100 @@ const useCoinflipStore = create<CoinflipStore>((set, get) => ({
       set({ gameSessionError: error as string });
     }
   },
-  initializeListeners: () => {},
-  sessionCleanup: () => {},
-  getSessionSeed: () => {},
-  createBet: () => {},
-  flipCoin: () => {},
-  continueBet: () => {},
-  sessionNext: () => {},
+  initializeListeners: () => {
+    const coinflipSocket = useSocketStore.getState().socket;
+
+    if (coinflipSocket) {
+      // Listen for the server to send the client a message to continue the bet
+      coinflipSocket.on(
+        CoinFlipServerMessage.FLIP_RESULT,
+        ({ session, result }) => {
+          console.log("Received Flip Data:", result, session);
+          set({
+            sessionData: session,
+            flipResult: result,
+          });
+        },
+      );
+
+      coinflipSocket.on(CoinFlipServerMessage.GAME_ENDED, ({ serverSeed }) => {
+        set({
+          serverSeed,
+        });
+        console.log("Game Ended", serverSeed);
+      });
+
+      coinflipSocket.on(
+        CoinFlipServerMessage.GAME_CHANGE_STATE,
+        ({ session, state }) => {
+          console.log("Game State:", state);
+          set({
+            sessionData: session,
+            gameState: state,
+          });
+        },
+      );
+    }
+  },
+  sessionCleanup: () => {
+    set({
+      sessionData: null,
+      flipResult: null,
+      gameState: null,
+      serverSeed: null,
+      gameSessionError: null,
+    });
+  },
+  createBet: (clientSeed: string, betAmount: string) => {
+    const coinflipSocket = useSocketStore.getState().socket;
+
+    if (coinflipSocket) {
+      coinflipSocket.emit(
+        CoinFlipClientMessage.CREATE_BET,
+        {
+          client_seed: clientSeed,
+          amount: betAmount,
+        },
+        (ack: TCoinflipAck) => {
+          if (ack.status === "SUCCESS") {
+            set({
+              sessionData: ack.session,
+            });
+          }
+        },
+      );
+    }
+  },
+  flipCoin: (choice: TCoinflipSessionClientGameData) => {
+    const coinflipSocket = useSocketStore.getState().socket;
+
+    coinflipSocket?.emit(
+      CoinFlipClientMessage.FLIP_COIN,
+      choice,
+      (ack: TCoinflipAck) => {
+        if (ack.status === "SUCCESS") {
+          set({
+            sessionData: ack.session,
+          });
+        }
+      },
+    );
+  },
+  sessionNext: (option: "CASHOUT" | "CONTINUE") => {
+    const coinflipSocket = useSocketStore.getState().socket;
+
+    coinflipSocket?.emit(
+      CoinFlipClientMessage.SESSION_NEXT,
+      option,
+      (ack: TCoinflipAck) => {
+        if (ack.status === "SUCCESS") {
+          set({
+            sessionData: ack.session,
+          });
+        }
+      },
+    );
+  },
 }));
+
 export default useCoinflipStore;
