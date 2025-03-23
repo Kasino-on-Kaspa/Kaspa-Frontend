@@ -17,7 +17,7 @@ export default function DiceRollPage() {
 
   return (
     <main className="p-2 md:p-5 f_Onest">
-      <div className="w-full h-[300px] md:h-[500px] bg-[#333] rounded-3xl">
+      <div className="w-full  bg-[#333] rounded-3xl">
         <DieRollGame />
       </div>
 
