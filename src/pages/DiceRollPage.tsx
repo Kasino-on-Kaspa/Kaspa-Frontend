@@ -17,7 +17,7 @@ export default function DiceRollPage() {
 
   return (
     <main className="p-2 md:p-5 f_Onest">
-      <div className="w-full h-[300px] md:h-[500px] bg-[#333] rounded-3xl">
+      <div className="w-full h-[600px] md:h-[700px] bg-[#333] rounded-3xl">
         <DieRollGame />
       </div>
 
@@ -42,7 +42,7 @@ export default function DiceRollPage() {
             <div className="bg-[#6fc7ba]/10 px-3 py-1.5 rounded-full flex items-center gap-2">
               <Icon icon="ph:house-fill" className="text-[#6fc7ba] text-sm" />
               <p className="text-[10px] md:text-xs font-medium text-[#6fc7ba]">
-                House Edge: 1%
+                House Edge: 2%
               </p>
             </div>
             <div className="bg-[#6fc7ba]/10 px-3 py-1.5 rounded-full flex items-center gap-2">
