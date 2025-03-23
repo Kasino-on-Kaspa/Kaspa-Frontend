@@ -38,6 +38,12 @@ const useCoinflipStore = create<CoinflipStore>((set, get) => ({
 
       if (!coinflipState.sessionData) {
         coinflipState.startSession();
+      } else {
+        set({
+          serverSeed: coinflipState.serverSeed,
+          sessionData: coinflipState.sessionData,
+          isConnected: true,
+        });
       }
     } catch (error) {
       console.error(error);

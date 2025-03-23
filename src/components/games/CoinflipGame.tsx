@@ -156,7 +156,7 @@ export default function CoinflipGame() {
   return (
     <div className="max-w-2xl mx-auto p-4 space-y-6">
       {/* Game Status */}
-      {sessionData && (
+      {sessionData?.sessionId && (
         <div className="bg-[#2A2A2A] rounded-xl p-4">
           <h3 className="text-sm font-medium text-white/90 mb-2">
             Current Game
@@ -181,7 +181,7 @@ export default function CoinflipGame() {
       {/* Game Controls */}
       <div className="bg-[#2A2A2A] rounded-xl p-4 space-y-4">
         {/* Betting Controls - Only show when no session */}
-        {!sessionData && (
+        {!sessionData?.sessionId && (
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="text-xs text-white/60 mb-1 block">
@@ -211,41 +211,43 @@ export default function CoinflipGame() {
         )}
 
         {/* Coin Selection - Only show after placing bet */}
-        {sessionData && gameState === "PLAYER_TURN" && !isFlipping && (
-          <>
-            <h3 className="text-sm font-medium text-white/90 text-center mb-2">
-              Choose Your Side
-            </h3>
-            <div className="flex justify-center gap-4">
-              <Button
-                className={`w-32 h-32 rounded-full ${
-                  selectedSide === "HEADS"
-                    ? "bg-[#6fc7ba] text-[#333]"
-                    : "bg-white/5 text-white/70"
-                } flex flex-col items-center justify-center transition-colors`}
-                onClick={() => setSelectedSide("HEADS")}
-              >
-                <Icon icon="ph:coin-fill" className="text-4xl mb-2" />
-                <span className="text-sm font-medium">HEADS</span>
-              </Button>
-              <Button
-                className={`w-32 h-32 rounded-full ${
-                  selectedSide === "TAILS"
-                    ? "bg-[#6fc7ba] text-[#333]"
-                    : "bg-white/5 text-white/70"
-                } flex flex-col items-center justify-center transition-colors`}
-                onClick={() => setSelectedSide("TAILS")}
-              >
-                <Icon icon="ph:coin-fill" className="text-4xl mb-2" />
-                <span className="text-sm font-medium">TAILS</span>
-              </Button>
-            </div>
-          </>
-        )}
+        {sessionData?.sessionId &&
+          gameState === "PLAYER_TURN" &&
+          !isFlipping && (
+            <>
+              <h3 className="text-sm font-medium text-white/90 text-center mb-2">
+                Choose Your Side
+              </h3>
+              <div className="flex justify-center gap-4">
+                <Button
+                  className={`w-32 h-32 rounded-full ${
+                    selectedSide === "HEADS"
+                      ? "bg-[#6fc7ba] text-[#333]"
+                      : "bg-white/5 text-white/70"
+                  } flex flex-col items-center justify-center transition-colors`}
+                  onClick={() => setSelectedSide("HEADS")}
+                >
+                  <Icon icon="ph:coin-fill" className="text-4xl mb-2" />
+                  <span className="text-sm font-medium">HEADS</span>
+                </Button>
+                <Button
+                  className={`w-32 h-32 rounded-full ${
+                    selectedSide === "TAILS"
+                      ? "bg-[#6fc7ba] text-[#333]"
+                      : "bg-white/5 text-white/70"
+                  } flex flex-col items-center justify-center transition-colors`}
+                  onClick={() => setSelectedSide("TAILS")}
+                >
+                  <Icon icon="ph:coin-fill" className="text-4xl mb-2" />
+                  <span className="text-sm font-medium">TAILS</span>
+                </Button>
+              </div>
+            </>
+          )}
 
         {/* Action Buttons */}
         <div className="flex justify-center gap-4">
-          {!sessionData ? (
+          {!sessionData?.sessionId ? (
             <Button
               className="bg-[#6fc7ba] text-[#333] hover:bg-[#6fc7ba]/90 px-8"
               onClick={handleCreateBet}
