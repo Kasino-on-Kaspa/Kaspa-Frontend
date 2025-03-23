@@ -312,7 +312,7 @@ export default function DieRollGame() {
 
     // Create a new audio object
     const audio = new Audio(`/dice-sounds/dice-0${randomNum}.wav`);
-    audio.volume = 0.5;
+    audio.volume = 0.2;
 
     // Play the sound
     audio.play().catch((error) => {
@@ -370,6 +370,36 @@ export default function DieRollGame() {
     }
   };
 
+  // Add this function to play the click sound
+  const playClickSound = () => {
+    const audio = new Audio("/dice-sounds/click.wav");
+    audio.volume = 0.3;
+    audio.play().catch((error) => {
+      console.error("Error playing click sound:", error);
+    });
+  };
+
+  // Update the handleSliderPosition function to play sound when slider moves
+  const handleSliderPosition = (e: MouseEvent) => {
+    if (!sliderRef.current) return;
+
+    const rect = sliderRef.current.getBoundingClientRect();
+    let percentage = ((e.clientX - rect.left) / rect.width) * 100;
+
+    // Clamp between 1 and 98
+    percentage = Math.max(1, Math.min(98, percentage));
+
+    const newValue = Math.round(percentage);
+
+    // Only play sound and update if the value actually changed
+    if (newValue !== targetNumber) {
+      setTargetNumber(newValue);
+    }
+    if (newValue % 4 == 1 && newValue !== targetNumber) {
+      playClickSound();
+    }
+  };
+
   // Handle slider drag
   useEffect(() => {
     const handleMouseDown = (e: MouseEvent) => {
@@ -387,18 +417,6 @@ export default function DieRollGame() {
 
     const handleMouseUp = () => {
       isDragging.current = false;
-    };
-
-    const handleSliderPosition = (e: MouseEvent) => {
-      if (!sliderRef.current) return;
-
-      const rect = sliderRef.current.getBoundingClientRect();
-      let percentage = ((e.clientX - rect.left) / rect.width) * 100;
-
-      // Clamp between 1 and 98
-      percentage = Math.max(1, Math.min(98, percentage));
-
-      setTargetNumber(Math.round(percentage));
     };
 
     document.addEventListener("mousedown", handleMouseDown);
@@ -860,7 +878,7 @@ export default function DieRollGame() {
         <div className="text-white/70 text-xs">Roll {condition}</div>
         <div className="flex items-center">
           <span className="text-white text-lg font-semibold">
-            {targetNumber}.50
+            {targetNumber}
           </span>
           <button
             className="ml-2 text-white/70 hover:text-white"
@@ -890,7 +908,7 @@ export default function DieRollGame() {
     const recentBets = rollHistory.slice(0, 10);
 
     return (
-      <div className="flex justify-center gap-2 mb-4 overflow-x-hidden">
+      <div className="flex justify-start gap-2 mb-4 overflow-x-hidden w-full ">
         {recentBets.map((bet, index) => {
           const isWin =
             condition === "OVER"
@@ -900,7 +918,7 @@ export default function DieRollGame() {
           return (
             <div
               key={index}
-              className={`w-12 h-12 rounded-full flex items-center justify-center text-black font-bold ${
+              className={`min-w-12 aspect-square rounded-full flex items-center justify-center text-black font-bold ${
                 isWin ? "bg-[#6fc7ba]" : "bg-red-500"
               }`}
             >
