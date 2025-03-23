@@ -1,5 +1,9 @@
 import { Socket } from "socket.io-client";
-import { CoinFlipClientMessage, CoinFlipServerMessage } from "./coinflip";
+import {
+  CoinFlipClientMessage,
+  CoinFlipServerMessage,
+  TCoinflipSessionJSON,
+} from "./coinflip";
 import { DieRollClientMessage, DieRollServerMessage } from "./dieroll";
 import { User } from "./user";
 
@@ -19,8 +23,11 @@ export interface ClientToServerEvents {
   "wallet:getBalance": () => void;
 
   // Coinflip events
-  [CoinFlipClientMessage.GET_SESSION_SEED]: (
-    callback: (serverSeedHash: string, sessionId?: string) => void,
+  [CoinFlipClientMessage.GET_SESSION]: (
+    callback: (
+      serverSeedHash: string,
+      sessionData?: TCoinflipSessionJSON,
+    ) => void,
   ) => void;
   [CoinFlipClientMessage.CREATE_BET]: (
     bet_data: any,
