@@ -39,12 +39,8 @@ export default function CoinflipGame() {
   const handleStartGame = () => {
     sessionCleanup();
     setHasStarted(true);
-    setGameEnded(false);
-    if (!sessionData) {
-      initializeGame();
-      // Generate a random client seed
-      setClientSeed(Math.random().toString(36).substring(2, 15));
-    }
+    initializeGame();
+    setClientSeed(Math.random().toString(36).substring(2, 15));
   };
 
   const handleCreateBet = () => {
@@ -124,7 +120,7 @@ export default function CoinflipGame() {
     );
   }
 
-  if (gameEnded) {
+  if (gameState === "END") {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px]">
         <div className="bg-[#2A2A2A] rounded-xl p-8 text-center space-y-4">
@@ -183,7 +179,7 @@ export default function CoinflipGame() {
       {/* Game Controls */}
       <div className="bg-[#2A2A2A] rounded-xl p-4 space-y-4">
         {/* Betting Controls - Only show when no session */}
-        {!sessionData?.sessionId && (
+        {gameState === null && (
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="text-xs text-white/60 mb-1 block">
@@ -249,7 +245,7 @@ export default function CoinflipGame() {
 
         {/* Action Buttons */}
         <div className="flex justify-center gap-4">
-          {!sessionData?.sessionId ? (
+          {gameState === null ? (
             <Button
               className="bg-[#6fc7ba] text-[#333] hover:bg-[#6fc7ba]/90 px-8"
               onClick={handleCreateBet}

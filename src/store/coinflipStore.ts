@@ -57,7 +57,7 @@ const useCoinflipStore = create<CoinflipStore>((set, get) => ({
               serverSeedHash,
               sessionData,
               isConnected: true,
-              gameState: sessionData?.sessionId ? "FLIP_CHOICE" : null,
+              gameState: null,
             });
           },
         );
