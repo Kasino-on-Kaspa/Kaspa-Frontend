@@ -3,7 +3,7 @@ import { NetworkType, Balance, KaspaWallet } from "@/types/kaspa";
 import { setAuthTokens, getStoredTokens, clearTokens } from "@/lib/auth";
 import { getMessageForSigning } from "@/lib/walletQueries";
 import useSocketStore from "./socketStore";
-import { authenticatedFetch } from "@/lib/auth";
+import { HandshakeResponse } from "@/types/socket";
 
 interface UserData {
   username?: string;
@@ -120,6 +120,7 @@ const useWalletStore = create<WalletState>((set, get) => ({
   initWallet: async (wallet) => {
     console.log("Initializing wallet...");
     set({ wallet });
+
     try {
       const accounts = await wallet.getAccounts();
       console.log("Got accounts:", accounts);
@@ -190,30 +191,42 @@ const useWalletStore = create<WalletState>((set, get) => ({
         },
       ).then((res) => res.json());
 
+      console.log("Auth data:", authData);
+
       setAuthTokens({
         accessToken: authData.accessToken,
         refreshToken: authData.refreshToken,
       });
 
-      const walletData = await authenticatedFetch(
-        `${import.meta.env.VITE_BACKEND_URL}/wallet/deposit`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ wallet_id: authData?.user.depositAddress }),
-        },
-      );
+      wallet.on("balanceChanged", (balance) => {
+        set({ balance });
+      });
 
-      const walletDataJson = await walletData.json();
+      // const walletData = await authenticatedFetch(
+      //   `${import.meta.env.VITE_BACKEND_URL}/wallet/deposit`,
+      //   {
+      //     method: "POST",
+      //     headers: { "Content-Type": "application/json" },
+      //     body: JSON.stringify({ wallet_id: authData?.user.depositAddress }),
+      //   }
+      // );
+
+      // const walletDataJson = await walletData.json();
+
+      // set({
+      //   isAuthenticated: true,
+      //   authError: null,
+      //   authExpiry: expiry,
+      //   onSiteBalance: {
+      //     address: walletDataJson.address,
+      //     balance: walletDataJson.balance || 0,
+      //   },
+      // });
 
       set({
         isAuthenticated: true,
         authError: null,
         authExpiry: expiry,
-        onSiteBalance: {
-          address: walletDataJson.address,
-          balance: walletDataJson.balance || 0,
-        },
       });
 
       const checkInterval = setInterval(() => {
@@ -235,25 +248,27 @@ const useWalletStore = create<WalletState>((set, get) => ({
     }
   },
   initializeWalletSocketListeners: () => {
-    console.log("Initializing wallet socket listeners...");
     const socket = useSocketStore.getState().socket;
     if (!socket) return;
 
     try {
-      socket.emit("wallet:getBalance");
-      socket.on("wallet:balance", (balance) => {
-        set({
-          onSiteBalance: {
-            balance: balance.balance,
-            address: balance.address,
-          },
-        });
-      });
-
-      socket.on("wallet:error", (error) => {
-        console.error("Wallet error:", error);
-      });
+      socket.once(
+        "account:handshake",
+        ({ wallet, balance }: HandshakeResponse) => {
+          set({
+            isAuthenticated: true,
+            onSiteBalance: {
+              balance,
+              address: wallet,
+            },
+          });
+        },
+      );
     } catch (error) {
+      set({
+        isAuthenticated: false,
+        authError: "Error initializing wallet socket listeners",
+      });
       console.error("Error initializing wallet socket listeners:", error);
     }
   },
