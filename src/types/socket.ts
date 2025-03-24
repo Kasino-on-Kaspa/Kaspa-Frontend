@@ -112,3 +112,11 @@ export interface HandshakeResponse {
   username: string | null;
   balance: string;
 }
+
+export interface HandshakeResponse {
+  wallet: string;
+  address: string;
+  id: string;
+  username: string | null;
+  balance: string;
+}
