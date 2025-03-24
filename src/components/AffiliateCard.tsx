@@ -2,8 +2,10 @@
 
 import { Icon } from "@iconify/react";
 import { Button } from "./ui/button";
+import { useRouter } from "@tanstack/react-router";
 
 export default function AffiliateCard() {
+  const router = useRouter();
   const benefits = [
     {
       icon: "ph:money-fill",
@@ -43,7 +45,7 @@ export default function AffiliateCard() {
 
       <Button
         className="w-full rounded-md bg-[#6fc7ba] text-[#333] hover:bg-[#6fc7ba]/90 text-[10px] h-8 cursor-pointer"
-        onClick={() => window.open("/referral", "_blank")}
+        onClick={() => router.navigate({ to: "/referral" })}
       >
         Become an Affiliate
       </Button>
