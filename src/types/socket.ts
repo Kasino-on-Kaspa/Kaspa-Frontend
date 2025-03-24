@@ -61,6 +61,7 @@ export interface ServerToClientEvents {
   // Wallet events
   "wallet:error": (data: { message: string }) => void;
   "wallet:balance": (data: { balance: string; address: string }) => void;
+  "account:handshake": (data: HandshakeResponse) => void;
 
   // Coinflip events
   [CoinFlipServerMessage.GAME_CHANGE_STATE]: (newState: any) => void;
@@ -89,4 +90,12 @@ export interface SocketState {
   connectionError: string | null;
   reconnect: () => void;
   connect: () => void;
+}
+
+export interface HandshakeResponse {
+  wallet: string;
+  address: string;
+  id: string;
+  username: string | null;
+  balance: string;
 }
