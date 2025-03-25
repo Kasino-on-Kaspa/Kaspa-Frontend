@@ -50,10 +50,15 @@ const useCoinflipStore = create<CoinflipStore>((set, get) => ({
         console.log("Requesting Coinflip Session...");
         coinflipSocket.emit(
           CoinFlipClientMessage.GET_SESSION,
-          (serverSeedHash: string, sessionData?: TCoinflipSessionJSON) => {
+          (
+            serverSeedHash: string,
+            sessionData?: { data: TCoinflipSessionJSON; resume_state: string },
+          ) => {
+            console.log(sessionData);
             set({
               serverSeedHash,
-              sessionData,
+              sessionData: sessionData?.data,
+              gameState: sessionData?.resume_state,
               isConnected: true,
             });
           },

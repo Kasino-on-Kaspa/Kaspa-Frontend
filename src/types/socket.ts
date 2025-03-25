@@ -31,7 +31,7 @@ export interface ClientToServerEvents {
   [CoinFlipClientMessage.GET_SESSION]: (
     callback: (
       serverSeedHash: string,
-      sessionData?: TCoinflipSessionJSON,
+      sessionData?: { data: TCoinflipSessionJSON; resume_state: string },
     ) => void,
   ) => void;
   [CoinFlipClientMessage.CREATE_BET]: (
