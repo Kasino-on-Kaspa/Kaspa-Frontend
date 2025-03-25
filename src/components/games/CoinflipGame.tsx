@@ -37,6 +37,9 @@ export default function CoinflipGame() {
   }, [sessionData]);
 
   const handleStartGame = () => {
+    if (gameState === "END") {
+      sessionCleanup();
+    }
     setHasStarted(true);
     initializeGame();
     setClientSeed(Math.random().toString(36).substring(2, 15));
