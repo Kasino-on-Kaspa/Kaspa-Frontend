@@ -75,6 +75,30 @@ export default function CoinflipGame() {
     }
   }, [flipResult, selectedSide]);
 
+  if (gameState === "TIMEOUT") {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px]">
+        <div className="bg-[#2A2A2A] rounded-xl p-8 text-center space-y-4">
+          <Icon
+            icon="ph:clock-fill"
+            className="text-6xl text-[#6fc7ba] mx-auto"
+          />
+          <h2 className="text-xl font-bold text-white">Game Timeout</h2>
+          <p className="text-sm text-white/70">
+            The game session has timed out. Please reconnect to continue
+            playing.
+          </p>
+          <Button
+            className="bg-[#6fc7ba] text-[#333] hover:bg-[#6fc7ba]/90 px-8 py-6 text-lg"
+            onClick={handleStartGame}
+          >
+            Reconnect
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   // If there's an existing session, skip the start screen
   if (!hasStarted && !sessionData) {
     return (

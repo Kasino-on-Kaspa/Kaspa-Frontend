@@ -158,7 +158,7 @@ const useWalletStore = create<WalletState>((set, get) => ({
     try {
       const existingTokens = getStoredTokens();
       console.log("Existing tokens:", existingTokens);
-      if (existingTokens) {
+      if (existingTokens?.accessToken && existingTokens?.refreshToken) {
         set({
           isAuthenticated: true,
           authError: null,
@@ -223,11 +223,21 @@ const useWalletStore = create<WalletState>((set, get) => ({
       //   },
       // });
 
-      set({
-        isAuthenticated: true,
-        authError: null,
-        authExpiry: expiry,
-      });
+      const storedTokens = getStoredTokens();
+
+      if (storedTokens?.accessToken && storedTokens?.refreshToken) {
+        set({
+          isAuthenticated: true,
+          authError: null,
+          authExpiry: expiry,
+        });
+      } else {
+        set({
+          isAuthenticated: false,
+          authError: "No tokens found",
+          authExpiry: null,
+        });
+      }
 
       const checkInterval = setInterval(() => {
         get().checkAuthExpiry();
