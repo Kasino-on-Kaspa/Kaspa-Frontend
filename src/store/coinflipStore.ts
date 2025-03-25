@@ -51,13 +51,10 @@ const useCoinflipStore = create<CoinflipStore>((set, get) => ({
         coinflipSocket.emit(
           CoinFlipClientMessage.GET_SESSION,
           (serverSeedHash: string, sessionData?: TCoinflipSessionJSON) => {
-            console.log("Coinflip Session received:", serverSeedHash);
-            console.log("Session Data:", sessionData);
             set({
               serverSeedHash,
               sessionData,
               isConnected: true,
-              gameState: null,
             });
           },
         );
@@ -149,11 +146,14 @@ const useCoinflipStore = create<CoinflipStore>((set, get) => ({
   sessionNext: (option: "CASHOUT" | "CONTINUE") => {
     const coinflipSocket = useSocketStore.getState().socket;
 
+    console.log("Session Next:", option);
+
     coinflipSocket?.emit(
       CoinFlipClientMessage.SESSION_NEXT,
       option,
       (ack: TCoinflipAck) => {
         if (ack.status === "SUCCESS") {
+          console.log("Session Next Ack:", ack);
           set({
             sessionData: ack.session,
           });
