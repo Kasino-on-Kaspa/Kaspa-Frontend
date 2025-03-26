@@ -12,6 +12,29 @@ import { User } from "./user";
 import { BaseBetType } from "./base";
 import { z } from "zod";
 
+// Event handler types
+export type SocketEventHandler = (...args: any[]) => void;
+export type SocketEventHandlers = {
+  [K in keyof ServerToClientEvents]?: SocketEventHandler;
+};
+
+// Connection state types
+export interface ConnectionState {
+  isConnected: boolean;
+  isConnecting: boolean;
+  connectionError: string | null;
+  lastConnectedAt: number | null;
+  reconnectAttempts: number;
+}
+
+// Socket configuration
+export interface SocketConfig {
+  reconnectionAttempts: number;
+  reconnectionDelay: number;
+  reconnectionDelayMax: number;
+  timeout: number;
+}
+
 /**
  * Socket data interface for authenticated sockets
  */
@@ -86,21 +109,31 @@ export interface ServerToClientEvents {
   [DieRollServerMessage.GAME_ENDED]: () => void;
 }
 
-/**
- * Type alias for Socket.IO client with typed events
- */
 export type SocketType = Socket<
   ServerToClientEvents,
   ClientToServerEvents
 > | null;
 
-export interface SocketState {
+export interface SocketState extends ConnectionState {
   socket: SocketType;
-  isConnected: boolean;
-  connectionError: string | null;
+  config: SocketConfig;
+  eventHandlers: SocketEventHandlers;
+  setIsConnected: (isConnected: boolean) => void;
+  setConnectionError: (error: string | null) => void;
+  setIsConnecting: (isConnecting: boolean) => void;
+  setLastConnectedAt: (timestamp: number | null) => void;
+  setReconnectAttempts: (attempts: number) => void;
+  registerEventHandler: <K extends keyof ServerToClientEvents>(
+    event: K,
+    handler: ServerToClientEvents[K],
+  ) => void;
+  unregisterEventHandler: <K extends keyof ServerToClientEvents>(
+    event: K,
+  ) => void;
   reconnect: () => void;
   connect: () => void;
   disconnect: () => void;
+  cleanup: () => void;
 }
 
 export interface HandshakeResponse {
