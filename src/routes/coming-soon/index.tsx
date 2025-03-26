@@ -25,7 +25,7 @@ export default function Index() {
 
   return (
     <div className="min-h-screen bg-[#231f20] font-onest">
-      <main className="flex-1 ml-0 lg:ml-[245px] mt-10">
+      <main className="flex-1 ml-0 mt-10">
         <div className="flex flex-col items-center justify-center min-h-[calc(100vh-40px)] p-4 relative overflow-hidden">
           {/* Animated background elements */}
           <div className="absolute inset-0 overflow-hidden">

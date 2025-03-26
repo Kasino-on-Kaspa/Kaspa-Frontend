@@ -17,12 +17,10 @@ export default function WalletButton() {
   const {
     address,
     balance,
-
     isConnecting,
     isAuthenticated,
     authError,
     setAddress,
-
     setIsConnecting,
     disconnect,
     authenticate,
