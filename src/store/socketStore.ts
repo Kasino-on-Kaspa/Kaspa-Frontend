@@ -55,6 +55,9 @@ const useSocketStore = create<SocketState>((set) => ({
         console.log("Disconnected from socket");
       });
       socket.on("connect_error", (error) => {
+        if (error.message === "Invalid token") {
+          walletStore.checkAuthExpiry();
+        }
         console.error("Socket connection error:", error);
       });
 
