@@ -13,3 +13,54 @@ export function formatAddress(address: string): string {
 export function formatKAS(sompi: number) {
   return (sompi / 100000000).toFixed(8);
 }
+
+export function kasToSompi(kas: string): number {
+  try {
+    // Remove any non-numeric characters except decimal point
+    const cleanKas = kas.replace(/[^\d.]/g, "");
+
+    // Convert to number and multiply by 100000000 (1 KAS = 100,000,000 Sompi)
+    const sompi = Math.floor(parseFloat(cleanKas) * 100000000);
+
+    // Check if the result is a valid number
+    if (isNaN(sompi)) {
+      throw new Error("Invalid KAS amount");
+    }
+
+    return sompi;
+  } catch (error) {
+    throw new Error("Invalid KAS amount");
+  }
+}
+
+export function validateKasAmount(amount: string, maxAmount: number): boolean {
+  try {
+    const sompi = kasToSompi(amount);
+    return sompi > 0 && sompi <= maxAmount;
+  } catch {
+    return false;
+  }
+}
+
+// Gas fee calculation
+export function calculateGasFee(amount: number): number {
+  // Base gas fee is 0.00001 KAS (1000 sompi)
+  const BASE_GAS_FEE = 1000;
+  // Additional gas fee per KAS (0.00001 KAS per KAS)
+  const GAS_PER_KAS = 1000;
+
+  // Calculate total gas fee
+  const totalGasFee = BASE_GAS_FEE + (amount * GAS_PER_KAS) / 100000000;
+
+  return Math.ceil(totalGasFee);
+}
+
+export function getMaxAmountWithGas(totalAmount: number): number {
+  const gasFee = calculateGasFee(totalAmount);
+  return totalAmount - gasFee;
+}
+
+export function formatMaxAmount(totalAmount: number): string {
+  const maxAmount = getMaxAmountWithGas(totalAmount);
+  return formatKAS(maxAmount);
+}

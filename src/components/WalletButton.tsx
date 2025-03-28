@@ -1,13 +1,20 @@
 import useKaspaWallet from "@/hooks/useKaspaWallet";
 import { Button } from "./ui/button";
 import useWalletStore from "@/store/walletStore";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Dialog, DialogTrigger, DialogContent } from "./ui/dialog";
-import { formatAddress, formatKAS } from "@/lib/utils";
+import {
+  formatAddress,
+  formatKAS,
+  kasToSompi,
+  validateKasAmount,
+  formatMaxAmount,
+} from "@/lib/utils";
 import Balance from "./Balance";
 
 import { Icon } from "@iconify/react/dist/iconify.js";
 import useSocketStore from "@/store/socketStore";
+import { toast } from "sonner";
 
 export default function WalletButton() {
   const wallet = useKaspaWallet();
@@ -21,15 +28,23 @@ export default function WalletButton() {
     isAuthenticated,
     authError,
     setAddress,
+    withdrawBalance,
     setIsConnecting,
     disconnect,
     authenticate,
     initWallet,
     onSiteBalance,
+    handleBalanceChanged,
   } = useWalletStore();
+
+  const [depositAmount, setDepositAmount] = useState("");
+  const [withdrawAmount, setWithdrawAmount] = useState("");
+  const [isDepositing, setIsDepositing] = useState(false);
+  const [isWithdrawing, setIsWithdrawing] = useState(false);
 
   const handleConnect = async () => {
     if (!wallet) {
+      toast.error("No wallet available");
       return;
     }
 
@@ -44,6 +59,7 @@ export default function WalletButton() {
       }
     } catch (error) {
       console.error("Error connecting wallet:", error);
+      toast.error("Failed to connect wallet");
     } finally {
       setIsConnecting(false);
     }
@@ -55,16 +71,82 @@ export default function WalletButton() {
       socketDisconnect();
       disconnect();
       await wallet.disconnect(window.location.origin);
+      toast.success("Wallet disconnected successfully");
     } catch (error) {
       console.error("Error disconnecting wallet:", error);
+      toast.error("Failed to disconnect wallet");
+    }
+  };
+
+  const handleDeposit = async () => {
+    if (!wallet || !onSiteBalance?.address) {
+      toast.error("Wallet or deposit address not available");
+      return;
+    }
+
+    try {
+      setIsDepositing(true);
+      const sompi = kasToSompi(depositAmount);
+
+      if (!validateKasAmount(depositAmount, balance?.total || 0)) {
+        toast.error("Invalid amount or insufficient balance");
+        return;
+      }
+
+      await wallet.sendKaspa(onSiteBalance.address, sompi);
+      toast.success("Deposit initiated successfully");
+      setDepositAmount("");
+    } catch (error) {
+      console.error("Error depositing:", error);
+      toast.error(
+        error instanceof Error ? error.message : "Failed to initiate deposit",
+      );
+    } finally {
+      setIsDepositing(false);
+    }
+  };
+
+  const handleWithdraw = async () => {
+    try {
+      setIsWithdrawing(true);
+
+      if (
+        !validateKasAmount(withdrawAmount, Number(onSiteBalance?.balance || 0))
+      ) {
+        toast.error("Invalid amount or insufficient balance");
+        return;
+      }
+
+      withdrawBalance(withdrawAmount);
+      setWithdrawAmount("");
+    } catch (error) {
+      // Error is already handled in the store
+    } finally {
+      setIsWithdrawing(false);
+    }
+  };
+
+  const handleMaxDeposit = () => {
+    if (balance?.total) {
+      setDepositAmount(formatMaxAmount(balance.total));
+    }
+  };
+
+  const handleMaxWithdraw = () => {
+    if (onSiteBalance?.balance) {
+      setWithdrawAmount(formatMaxAmount(parseInt(onSiteBalance.balance)));
     }
   };
 
   useEffect(() => {
     if (wallet) {
       initWallet(wallet);
+      wallet.on("balanceChanged", handleBalanceChanged);
+      return () => {
+        wallet.removeListener("balanceChanged", handleBalanceChanged);
+      };
     }
-  }, [wallet, initWallet]);
+  }, [wallet, initWallet, handleBalanceChanged]);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -182,18 +264,72 @@ export default function WalletButton() {
           <p className="text-xs font-Onest text-[#6fc7ba] pb-1">
             Deposit Kaspa
           </p>
-          <div className="flex items-center gap-2 mt-1">
-            <input
-              type="text"
-              placeholder="Enter Amount"
-              className="w-full rounded-md bg-white/10  text-[#6fc7ba] text-[12px] h-8 px-2 outline-none"
-            />
-            <button className="w-fit px-3 rounded-md bg-[#6fc7ba] cursor-pointer text-[#333] hover:bg-[#6fc7ba]/90 text-[10px] h-8">
-              Deposit
+          <div className="flex items-center gap-2 mt-1 relative">
+            <div className="relative w-full">
+              <input
+                type="text"
+                value={depositAmount}
+                onChange={(e) => setDepositAmount(e.target.value)}
+                placeholder="Enter Amount"
+                className="w-full rounded-md bg-white/10 text-[#6fc7ba] text-[12px] h-8 px-2 outline-none pr-16"
+                disabled={isDepositing}
+              />
+              <button
+                onClick={handleMaxDeposit}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6fc7ba] text-[10px] hover:text-[#6fc7ba]/80 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={isDepositing || !balance?.total}
+              >
+                MAX
+              </button>
+            </div>
+            <button
+              onClick={handleDeposit}
+              disabled={isDepositing || !depositAmount}
+              className="w-fit px-3 rounded-md bg-[#6fc7ba] cursor-pointer text-[#333] hover:bg-[#6fc7ba]/90 text-[10px] h-8 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isDepositing ? "Depositing..." : "Deposit"}
             </button>
           </div>
           <p className="text-xs font-Onest text-[#6fc7ba] mt-2">
-            Max: {formatKAS(balance?.total || 0)}
+            Max: {formatKAS(balance?.total || 0)}KAS
+          </p>
+        </div>
+        <div className="p-3 bg-white/5 rounded-2xl -mt-2">
+          <p className="text-xs font-Onest text-[#6fc7ba] pb-1">
+            Withdraw Kaspa
+          </p>
+          <div className="flex items-center gap-2 mt-1 relative">
+            <div className="w-full relative">
+              <input
+                type="text"
+                value={withdrawAmount}
+                onChange={(e) => setWithdrawAmount(e.target.value)}
+                placeholder="Enter Amount"
+                className="w-full rounded-md bg-white/10 text-[#6fc7ba] text-[12px] h-8 px-2 outline-none pr-16"
+                disabled={isWithdrawing}
+              />
+              <button
+                onClick={handleMaxWithdraw}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6fc7ba] text-[10px] hover:text-[#6fc7ba]/80 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={isWithdrawing || !onSiteBalance?.balance}
+              >
+                MAX
+              </button>
+            </div>
+            <button
+              onClick={handleWithdraw}
+              disabled={isWithdrawing || !withdrawAmount}
+              className="w-fit px-3 rounded-md bg-[#6fc7ba] cursor-pointer text-[#333] hover:bg-[#6fc7ba]/90 text-[10px] h-8 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isWithdrawing ? "Withdrawing..." : "Withdraw"}
+            </button>
+          </div>
+          <p className="text-xs font-Onest text-[#6fc7ba] mt-2">
+            Max:{" "}
+            {onSiteBalance?.balance
+              ? formatKAS(parseInt(onSiteBalance.balance))
+              : 0}
+            KAS
           </p>
         </div>
         {authError && (
