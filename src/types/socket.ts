@@ -46,6 +46,8 @@ export interface ClientToServerEvents {
   // Wallet events
   "wallet:updateBalance": () => void;
   "wallet:getBalance": () => void;
+  "wallet:refresh": () => void;
+  "wallet:withdraw": (addr: string, bal: string) => void;
 
   // Coinflip events
   [CoinFlipClientMessage.GET_SESSION_SEED]: (
@@ -94,6 +96,7 @@ export interface ServerToClientEvents {
   "wallet:error": (data: { message: string }) => void;
   "wallet:balance": (data: { balance: string; address: string }) => void;
   "account:handshake": (data: HandshakeResponse) => void;
+  "wallet:update": (data: { balance: string }) => void;
   // Coinflip events
   [CoinFlipServerMessage.GAME_CHANGE_STATE]: (newState: any) => void;
   [CoinFlipServerMessage.FLIP_RESULT]: (data: {
@@ -136,6 +139,14 @@ export interface SocketState extends ConnectionState {
   connect: () => void;
   disconnect: () => void;
   cleanup: () => void;
+}
+
+export interface HandshakeResponse {
+  wallet: string;
+  address: string;
+  id: string;
+  username: string | null;
+  balance: string;
 }
 
 export interface HandshakeResponse {

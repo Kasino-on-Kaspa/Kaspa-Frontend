@@ -1,9 +1,15 @@
 import { create } from "zustand";
-import { NetworkType, Balance, KaspaWallet } from "@/types/kaspa";
+import {
+  NetworkType,
+  Balance,
+  KaspaWallet,
+  OnBalanceChanged,
+} from "@/types/kaspa";
 import { setAuthTokens, getStoredTokens, clearTokens } from "@/lib/auth";
 import { getMessageForSigning } from "@/lib/walletQueries";
 import useSocketStore from "./socketStore";
 import { HandshakeResponse } from "@/types/socket";
+import { toast } from "sonner";
 
 interface UserData {
   username?: string;
@@ -18,8 +24,8 @@ interface WalletState {
   isAuthenticated: boolean;
   authError: string | null;
   onSiteBalance: {
-    balance: string;
-    address: string;
+    balance?: string;
+    address?: string;
   } | null;
   authExpiry: number | null;
   userData: UserData | null;
@@ -37,10 +43,14 @@ interface WalletState {
   initWallet: (wallet: KaspaWallet) => Promise<void>;
   checkAuthExpiry: () => Promise<void>;
   initializeWalletSocketListeners: () => void;
+  refreshWalletBalance: () => void;
+  withdrawBalance: (amount: string) => void;
+  handleBalanceChanged: (data: OnBalanceChanged) => void;
 }
 
 const useWalletStore = create<WalletState>((set, get) => ({
   wallet: null,
+  mainWalletBalance: null,
   onSiteBalance: null,
   address: "",
   balance: null,
@@ -52,7 +62,18 @@ const useWalletStore = create<WalletState>((set, get) => ({
   userData: null,
   setWallet: (wallet) => set({ wallet }),
   setAddress: (address) => set({ address }),
-  setBalance: (balance) => set({ balance }),
+  setBalance: (balance) => {
+    try {
+      if (!balance) {
+        console.warn("Attempted to set null balance");
+        return;
+      }
+      set({ balance });
+    } catch (error) {
+      console.error("Error setting balance:", error);
+      toast.error("Failed to update wallet balance");
+    }
+  },
   setNetwork: (network) => set({ network }),
   setIsConnecting: (isConnecting) => set({ isConnecting }),
   setIsAuthenticated: (isAuthenticated) => set({ isAuthenticated }),
@@ -128,8 +149,14 @@ const useWalletStore = create<WalletState>((set, get) => ({
         set({ address: accounts[0] });
         const network = await wallet.getNetwork();
         set({ network });
-        const balance = await wallet.getBalance();
-        set({ balance });
+
+        try {
+          const balance = await wallet.getBalance();
+          set({ balance });
+        } catch (error) {
+          console.error("Error fetching initial balance:", error);
+          toast.error("Failed to fetch wallet balance");
+        }
 
         const tokens = getStoredTokens();
         if (tokens) {
@@ -144,6 +171,7 @@ const useWalletStore = create<WalletState>((set, get) => ({
       }
     } catch (error) {
       console.error("Error initializing wallet:", error);
+      toast.error("Failed to initialize wallet");
     }
   },
   authenticate: async () => {
@@ -198,8 +226,16 @@ const useWalletStore = create<WalletState>((set, get) => ({
         refreshToken: authData.refreshToken,
       });
 
-      wallet.on("balanceChanged", (balance) => {
-        set({ balance });
+      wallet?.on("balanceChanged", (data: OnBalanceChanged) => {
+        if (data.balance.pendingUtxoCount == 0) {
+          set({
+            balance: {
+              total: data.balance.mature,
+              confirmed: get().balance?.confirmed || 0,
+              unconfirmed: get().balance?.unconfirmed || 0,
+            },
+          });
+        }
       });
 
       // const walletData = await authenticatedFetch(
@@ -255,6 +291,7 @@ const useWalletStore = create<WalletState>((set, get) => ({
       socket.once(
         "account:handshake",
         ({ wallet, balance }: HandshakeResponse) => {
+          console.log("Handshake received:", wallet, balance);
           set({
             isAuthenticated: true,
             onSiteBalance: {
@@ -264,12 +301,102 @@ const useWalletStore = create<WalletState>((set, get) => ({
           });
         },
       );
+
+      socket.on("wallet:update", ({ balance }) => {
+        try {
+          set({
+            onSiteBalance: {
+              balance,
+              address: get().onSiteBalance?.address,
+            },
+          });
+
+          get().refreshWalletBalance();
+        } catch (error) {
+          console.error("Error updating onsite balance:", error);
+          toast.error("Failed to update onsite balance");
+        }
+      });
+
+      // Add error handler for wallet events
+      socket.on("wallet:error", ({ message }) => {
+        console.error("Wallet error:", message);
+        toast.error(message);
+      });
     } catch (error) {
       set({
         isAuthenticated: false,
         authError: "Error initializing wallet socket listeners",
       });
       console.error("Error initializing wallet socket listeners:", error);
+      toast.error("Failed to initialize wallet connection");
+    }
+  },
+  refreshWalletBalance: async () => {
+    const walletSocket = useSocketStore.getState().socket;
+    const { wallet } = get();
+
+    try {
+      // Update local wallet balance
+      if (wallet) {
+        const balance = await wallet.getBalance();
+        set({ balance });
+      }
+
+      // Update onsite balance through socket
+      if (walletSocket) {
+        walletSocket.emit("wallet:refresh");
+      }
+    } catch (error) {
+      console.error("Error refreshing wallet balance:", error);
+      toast.error("Failed to refresh wallet balance");
+    }
+  },
+  withdrawBalance: async (amount: string) => {
+    const walletSocket = useSocketStore.getState().socket;
+    const { address, onSiteBalance } = get();
+
+    try {
+      if (!walletSocket) {
+        throw new Error("Socket connection not available");
+      }
+
+      if (!address) {
+        throw new Error("No wallet address available");
+      }
+
+      if (
+        !onSiteBalance?.balance ||
+        Number(amount) > Number(onSiteBalance.balance)
+      ) {
+        throw new Error("Insufficient balance");
+      }
+
+      walletSocket.emit("wallet:withdraw", address, amount);
+      toast.success("Withdrawal request submitted");
+    } catch (error) {
+      console.error("Error withdrawing balance:", error);
+      toast.error(
+        error instanceof Error ? error.message : "Failed to withdraw balance",
+      );
+    }
+  },
+  handleBalanceChanged: (data: OnBalanceChanged) => {
+    try {
+      if (data.balance.pendingUtxoCount === 0) {
+        set({
+          balance: {
+            total: data.balance.mature,
+            confirmed: get().balance?.confirmed || 0,
+            unconfirmed: get().balance?.unconfirmed || 0,
+          },
+        });
+
+        get().refreshWalletBalance();
+      }
+    } catch (error) {
+      console.error("Error handling balance change:", error);
+      toast.error("Failed to update wallet balance");
     }
   },
 }));

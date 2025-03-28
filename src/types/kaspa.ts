@@ -4,6 +4,20 @@ export type NetworkType =
   | "kaspa_testnet_10"
   | "kaspa_devnet";
 
+export interface OnBalanceChanged {
+  address: string;
+  balance: OnBalanceChangedBalance;
+}
+
+export interface OnBalanceChangedBalance {
+  mature: number;
+  pending: number;
+  outgoing: number;
+  matureUtxoCount: number;
+  pendingUtxoCount: number;
+  stasisUtxoCount: number;
+}
+
 export interface KRC20OrderParams {
   krc20Tick: string;
   krc20Amount: number;
