@@ -1,6 +1,6 @@
 import { Socket } from "socket.io-client";
 import { CoinFlipClientMessage, CoinFlipServerMessage } from "./coinflip";
-import { DieRollClientMessage, DieRollServerMessage } from "./dieroll";
+import { DieRollServerMessage } from "./dieroll";
 import { User } from "./user";
 
 // Event handler types
@@ -40,6 +40,8 @@ export interface ClientToServerEvents {
   // Wallet events
   "wallet:updateBalance": () => void;
   "wallet:getBalance": () => void;
+  "wallet:refresh": () => void;
+  "wallet:withdraw": (addr: string, bal: string) => void;
 
   // Coinflip events
   [CoinFlipClientMessage.GET_SESSION_SEED]: (
@@ -64,15 +66,6 @@ export interface ClientToServerEvents {
     ack: (response: { success: boolean; error?: string }) => void,
   ) => void;
 
-  // Dieroll events
-  [DieRollClientMessage.PLACE_BET]: (
-    bet_data: any,
-    ack: (response: { success: boolean; error?: string }) => void,
-  ) => void;
-  [DieRollClientMessage.GET_SESSION_SEEDS]: (
-    callback: (serverSeedHash: string) => void,
-  ) => void;
-
   // Default Socket.IO events
   disconnect: () => void;
 }
@@ -85,7 +78,7 @@ export interface ServerToClientEvents {
   "wallet:error": (data: { message: string }) => void;
   "wallet:balance": (data: { balance: string; address: string }) => void;
   "account:handshake": (data: HandshakeResponse) => void;
-
+  "wallet:update": (data: { balance: string }) => void;
   // Coinflip events
   [CoinFlipServerMessage.GAME_CHANGE_STATE]: (newState: any) => void;
   [CoinFlipServerMessage.FLIP_RESULT]: (data: {
@@ -95,8 +88,12 @@ export interface ServerToClientEvents {
   [CoinFlipServerMessage.GAME_ENDED]: () => void;
 
   // Dieroll events
-  [DieRollServerMessage.ROLL_RESULT]: (result: any) => void;
-  [DieRollServerMessage.GAME_ENDED]: () => void;
+
+  [DieRollServerMessage.GAME_ENDED]: ({
+    serverSeed,
+  }: {
+    serverSeed: string;
+  }) => void;
 }
 
 export type SocketType = Socket<
@@ -124,6 +121,14 @@ export interface SocketState extends ConnectionState {
   connect: () => void;
   disconnect: () => void;
   cleanup: () => void;
+}
+
+export interface HandshakeResponse {
+  wallet: string;
+  address: string;
+  id: string;
+  username: string | null;
+  balance: string;
 }
 
 export interface HandshakeResponse {
