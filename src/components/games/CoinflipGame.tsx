@@ -79,7 +79,7 @@ export default function CoinflipGame() {
 
   if (gameState === "TIMEOUT") {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[400px]">
+      <div className="flex flex-col items-center justify-center p-8">
         <div className="bg-[#2A2A2A] rounded-xl p-8 text-center space-y-4">
           <Icon
             icon="ph:clock-fill"
@@ -104,7 +104,7 @@ export default function CoinflipGame() {
   // If there's an existing session, skip the start screen
   if (!hasStarted && !sessionData) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[400px]">
+      <div className="flex flex-col items-center justify-center p-8">
         <div className="bg-[#2A2A2A] rounded-xl p-8 text-center space-y-4">
           <Icon
             icon="ph:coin-fill"
@@ -127,7 +127,7 @@ export default function CoinflipGame() {
 
   if (!isConnected || gameSessionError) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] text-white/70">
+      <div className="flex flex-col items-center justify-center p-8 text-white/70">
         <Icon
           icon="ph:warning-circle-fill"
           className="text-4xl mb-4 text-[#6fc7ba]"
@@ -148,7 +148,7 @@ export default function CoinflipGame() {
 
   if (gameState === "END") {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[400px]">
+      <div className="flex flex-col items-center justify-center p-8">
         <div className="bg-[#2A2A2A] rounded-xl p-8 text-center space-y-4">
           <Icon
             icon={
@@ -178,7 +178,7 @@ export default function CoinflipGame() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto p-4 space-y-6">
+    <div className="p-8 space-y-6">
       {/* Game Status */}
       {sessionData?.sessionId && (
         <div className="bg-[#2A2A2A] rounded-xl p-4">
