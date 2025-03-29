@@ -94,6 +94,7 @@ export default function WalletButton() {
       }
 
       await wallet.sendKaspa(onSiteBalance.address, sompi);
+
       toast.success("Deposit initiated successfully");
       setDepositAmount("");
     } catch (error) {

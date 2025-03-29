@@ -30,6 +30,9 @@ interface WalletState {
   } | null;
   authExpiry: number | null;
   userData: UserData | null;
+  isWithdrawing: boolean;
+  isDepositing: boolean;
+  lastBalanceUpdate: number | null;
   setWallet: (wallet: KaspaWallet | null) => void;
   setAddress: (address: string) => void;
   setBalance: (balance: Balance | null) => void;
@@ -39,6 +42,8 @@ interface WalletState {
   setAuthError: (error: string | null) => void;
   setAuthExpiry: (expiry: number | null) => void;
   setUserData: (userData: UserData | null) => void;
+  setIsWithdrawing: (isWithdrawing: boolean) => void;
+  setIsDepositing: (isDepositing: boolean) => void;
   disconnect: () => void;
   authenticate: () => Promise<void>;
   initWallet: (wallet: KaspaWallet) => Promise<void>;
@@ -48,6 +53,8 @@ interface WalletState {
   withdrawBalance: (amount: string) => void;
   handleBalanceChanged: (data: OnBalanceChanged) => void;
 }
+
+const BALANCE_UPDATE_COOLDOWN = 2000; // 2 seconds cooldown between balance updates
 
 const useWalletStore = create<WalletState>((set, get) => ({
   wallet: null,
@@ -61,6 +68,10 @@ const useWalletStore = create<WalletState>((set, get) => ({
   authError: null,
   authExpiry: null,
   userData: null,
+  isWithdrawing: false,
+  isDepositing: false,
+  lastBalanceUpdate: null,
+
   setWallet: (wallet) => set({ wallet }),
   setAddress: (address) => set({ address }),
   setBalance: (balance) => {
@@ -69,7 +80,12 @@ const useWalletStore = create<WalletState>((set, get) => ({
         console.warn("Attempted to set null balance");
         return;
       }
-      set({ balance });
+      set({
+        balance,
+        lastBalanceUpdate: Date.now(),
+        isWithdrawing: false,
+        isDepositing: false,
+      });
     } catch (error) {
       console.error("Error setting balance:", error);
       toast.error("Failed to update wallet balance");
@@ -81,6 +97,8 @@ const useWalletStore = create<WalletState>((set, get) => ({
   setAuthError: (error) => set({ authError: error }),
   setAuthExpiry: (expiry) => set({ authExpiry: expiry }),
   setUserData: (userData) => set({ userData }),
+  setIsWithdrawing: (isWithdrawing) => set({ isWithdrawing }),
+  setIsDepositing: (isDepositing) => set({ isDepositing }),
 
   disconnect: () => {
     clearTokens();
@@ -92,6 +110,9 @@ const useWalletStore = create<WalletState>((set, get) => ({
       authError: null,
       authExpiry: null,
       userData: null,
+      isWithdrawing: false,
+      isDepositing: false,
+      lastBalanceUpdate: null,
     });
   },
   checkAuthExpiry: async () => {
@@ -236,6 +257,8 @@ const useWalletStore = create<WalletState>((set, get) => ({
               unconfirmed: get().balance?.unconfirmed || 0,
             },
           });
+
+          get().refreshWalletBalance();
         }
       });
 
@@ -309,35 +332,47 @@ const useWalletStore = create<WalletState>((set, get) => ({
               balance,
               address: wallet,
             },
+            lastBalanceUpdate: Date.now(),
           });
         },
       );
 
       socket.on("wallet:update", ({ balance }) => {
         try {
-          set({
-            onSiteBalance: {
-              balance,
-              address: get().onSiteBalance?.address,
-            },
-          });
+          const now = Date.now();
+          const lastUpdate = get().lastBalanceUpdate || 0;
 
-          get().refreshWalletBalance();
+          // Only update if enough time has passed since last update
+          if (now - lastUpdate >= BALANCE_UPDATE_COOLDOWN) {
+            set({
+              onSiteBalance: {
+                balance,
+                address: get().onSiteBalance?.address,
+              },
+              lastBalanceUpdate: now,
+              isWithdrawing: false,
+              isDepositing: false,
+            });
+
+            get().refreshWalletBalance();
+          }
         } catch (error) {
           console.error("Error updating onsite balance:", error);
           toast.error("Failed to update onsite balance");
         }
       });
 
-      // Add error handler for wallet events
       socket.on("wallet:error", ({ message }) => {
         console.error("Wallet error:", message);
         toast.error(message);
+        set({ isWithdrawing: false, isDepositing: false });
       });
     } catch (error) {
       set({
         isAuthenticated: false,
         authError: "Error initializing wallet socket listeners",
+        isWithdrawing: false,
+        isDepositing: false,
       });
       console.error("Error initializing wallet socket listeners:", error);
       toast.error("Failed to initialize wallet connection");
@@ -345,13 +380,27 @@ const useWalletStore = create<WalletState>((set, get) => ({
   },
   refreshWalletBalance: async () => {
     const walletSocket = useSocketStore.getState().socket;
-    const { wallet } = get();
+    const { wallet, lastBalanceUpdate } = get();
+    const now = Date.now();
+
+    // Check if enough time has passed since last update
+    if (
+      lastBalanceUpdate &&
+      now - lastBalanceUpdate < BALANCE_UPDATE_COOLDOWN
+    ) {
+      return;
+    }
 
     try {
       // Update local wallet balance
       if (wallet) {
         const balance = await wallet.getBalance();
-        set({ balance });
+        set({
+          balance,
+          lastBalanceUpdate: now,
+          isWithdrawing: false,
+          isDepositing: false,
+        });
       }
 
       // Update onsite balance through socket
@@ -361,6 +410,7 @@ const useWalletStore = create<WalletState>((set, get) => ({
     } catch (error) {
       console.error("Error refreshing wallet balance:", error);
       toast.error("Failed to refresh wallet balance");
+      set({ isWithdrawing: false, isDepositing: false });
     }
   },
   withdrawBalance: async (amount: string) => {
@@ -383,6 +433,7 @@ const useWalletStore = create<WalletState>((set, get) => ({
         throw new Error("Insufficient balance");
       }
 
+      set({ isWithdrawing: true });
       walletSocket.emit(
         "wallet:withdraw",
         address,
@@ -394,24 +445,35 @@ const useWalletStore = create<WalletState>((set, get) => ({
       toast.error(
         error instanceof Error ? error.message : "Failed to withdraw balance",
       );
+      set({ isWithdrawing: false });
     }
   },
   handleBalanceChanged: (data: OnBalanceChanged) => {
     try {
       if (data.balance.pendingUtxoCount === 0) {
-        set({
-          balance: {
-            total: data.balance.mature,
-            confirmed: get().balance?.confirmed || 0,
-            unconfirmed: get().balance?.unconfirmed || 0,
-          },
-        });
+        const now = Date.now();
+        const lastUpdate = get().lastBalanceUpdate || 0;
 
-        get().refreshWalletBalance();
+        // Only update if enough time has passed since last update
+        if (now - lastUpdate >= BALANCE_UPDATE_COOLDOWN) {
+          set({
+            balance: {
+              total: data.balance.mature,
+              confirmed: get().balance?.confirmed || 0,
+              unconfirmed: get().balance?.unconfirmed || 0,
+            },
+            lastBalanceUpdate: now,
+            isWithdrawing: false,
+            isDepositing: false,
+          });
+
+          get().refreshWalletBalance();
+        }
       }
     } catch (error) {
       console.error("Error handling balance change:", error);
       toast.error("Failed to update wallet balance");
+      set({ isWithdrawing: false, isDepositing: false });
     }
   },
 }));
