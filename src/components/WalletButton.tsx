@@ -33,6 +33,7 @@ export default function WalletButton() {
     disconnect,
     authenticate,
     initWallet,
+    refreshWalletBalance,
     onSiteBalance,
     handleBalanceChanged,
   } = useWalletStore();
@@ -103,6 +104,7 @@ export default function WalletButton() {
         error instanceof Error ? error.message : "Failed to initiate deposit",
       );
     } finally {
+      refreshWalletBalance();
       setIsDepositing(false);
     }
   };
@@ -194,9 +196,9 @@ export default function WalletButton() {
           <div className="flex items-center gap-2 mt-2">
             <p className="text-base tracking-tighter font-light font-Onest text-[#6fc7ba]">
               {balance?.total
-                ? formatKAS(balance.total)
+                ? formatKAS(BigInt(balance.total))
                 : onSiteBalance?.balance
-                  ? formatKAS(Number(onSiteBalance.balance))
+                  ? formatKAS(BigInt(onSiteBalance.balance))
                   : "0.00000000"}
               KAS
             </p>
@@ -224,7 +226,7 @@ export default function WalletButton() {
           </button>
         </div>
         <Balance
-          userBalance={formatKAS(balance?.total || 0)}
+          userBalance={formatKAS(BigInt(balance?.total || 0))}
           userAddress={address}
         />
         <div className="p-3 bg-white/5 rounded-2xl -mt-2">
@@ -236,7 +238,7 @@ export default function WalletButton() {
             <p className="text-xs font-Onest text-[#6fc7ba]">Onsite Balance:</p>
             <p className="text-xs font-Onest text-[#6fc7ba]">
               {onSiteBalance?.balance
-                ? formatKAS(Number(onSiteBalance.balance))
+                ? formatKAS(BigInt(onSiteBalance.balance))
                 : "0.00000000"}
               KAS
             </p>
@@ -292,7 +294,7 @@ export default function WalletButton() {
             </button>
           </div>
           <p className="text-xs font-Onest text-[#6fc7ba] mt-2">
-            Max: {formatKAS(balance?.total || 0)}KAS
+            Max: {formatKAS(BigInt(balance?.total || 0))}KAS
           </p>
         </div>
         <div className="p-3 bg-white/5 rounded-2xl -mt-2">
@@ -328,7 +330,7 @@ export default function WalletButton() {
           <p className="text-xs font-Onest text-[#6fc7ba] mt-2">
             Max:{" "}
             {onSiteBalance?.balance
-              ? formatKAS(parseInt(onSiteBalance.balance))
+              ? formatKAS(BigInt(onSiteBalance.balance))
               : 0}
             KAS
           </p>

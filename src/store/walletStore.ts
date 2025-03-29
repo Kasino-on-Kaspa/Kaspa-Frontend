@@ -248,19 +248,7 @@ const useWalletStore = create<WalletState>((set, get) => ({
         refreshToken: authData.refreshToken,
       });
 
-      wallet?.on("balanceChanged", (data: OnBalanceChanged) => {
-        if (data.balance.pendingUtxoCount == 0) {
-          set({
-            balance: {
-              total: data.balance.mature,
-              confirmed: get().balance?.confirmed || 0,
-              unconfirmed: get().balance?.unconfirmed || 0,
-            },
-          });
-
-          get().refreshWalletBalance();
-        }
-      });
+      wallet?.on("balanceChanged", get().handleBalanceChanged);
 
       // const walletData = await authenticatedFetch(
       //   `${import.meta.env.VITE_BACKEND_URL}/wallet/deposit`,
@@ -340,22 +328,20 @@ const useWalletStore = create<WalletState>((set, get) => ({
       socket.on("wallet:update", ({ balance }) => {
         try {
           const now = Date.now();
-          const lastUpdate = get().lastBalanceUpdate || 0;
 
           // Only update if enough time has passed since last update
-          if (now - lastUpdate >= BALANCE_UPDATE_COOLDOWN) {
-            set({
-              onSiteBalance: {
-                balance,
-                address: get().onSiteBalance?.address,
-              },
-              lastBalanceUpdate: now,
-              isWithdrawing: false,
-              isDepositing: false,
-            });
 
-            get().refreshWalletBalance();
-          }
+          set({
+            onSiteBalance: {
+              balance,
+              address: get().onSiteBalance?.address,
+            },
+            lastBalanceUpdate: now,
+            isWithdrawing: false,
+            isDepositing: false,
+          });
+
+          get().refreshWalletBalance();
         } catch (error) {
           console.error("Error updating onsite balance:", error);
           toast.error("Failed to update onsite balance");
@@ -466,6 +452,8 @@ const useWalletStore = create<WalletState>((set, get) => ({
             isWithdrawing: false,
             isDepositing: false,
           });
+
+          console.log("Hello");
 
           get().refreshWalletBalance();
         }

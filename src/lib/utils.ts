@@ -10,8 +10,8 @@ export function formatAddress(address: string): string {
   return `${address.slice(0, 6)}...${address.slice(-4)}`;
 }
 
-export function formatKAS(sompi: number) {
-  return (sompi / 100000000).toFixed(8);
+export function formatKAS(sompi: bigint) {
+  return (sompi / BigInt(100000000)).toString();
 }
 
 export function kasToSompi(kas: string): number {
@@ -62,5 +62,5 @@ export function getMaxAmountWithGas(totalAmount: number): number {
 
 export function formatMaxAmount(totalAmount: number): string {
   const maxAmount = getMaxAmountWithGas(totalAmount);
-  return formatKAS(maxAmount);
+  return formatKAS(BigInt(maxAmount));
 }
