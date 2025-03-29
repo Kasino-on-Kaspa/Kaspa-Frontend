@@ -10,6 +10,7 @@ import { getMessageForSigning } from "@/lib/walletQueries";
 import useSocketStore from "./socketStore";
 import { HandshakeResponse } from "@/types/socket";
 import { toast } from "sonner";
+import { kasToSompi } from "@/lib/utils";
 
 interface UserData {
   username?: string;
@@ -186,7 +187,7 @@ const useWalletStore = create<WalletState>((set, get) => ({
     try {
       const existingTokens = getStoredTokens();
       console.log("Existing tokens:", existingTokens);
-      if (existingTokens) {
+      if (existingTokens?.accessToken && existingTokens?.refreshToken) {
         set({
           isAuthenticated: true,
           authError: null,
@@ -259,11 +260,21 @@ const useWalletStore = create<WalletState>((set, get) => ({
       //   },
       // });
 
-      set({
-        isAuthenticated: true,
-        authError: null,
-        authExpiry: expiry,
-      });
+      const storedTokens = getStoredTokens();
+
+      if (storedTokens?.accessToken && storedTokens?.refreshToken) {
+        set({
+          isAuthenticated: true,
+          authError: null,
+          authExpiry: expiry,
+        });
+      } else {
+        set({
+          isAuthenticated: false,
+          authError: "No tokens found",
+          authExpiry: null,
+        });
+      }
 
       const checkInterval = setInterval(() => {
         get().checkAuthExpiry();
@@ -372,7 +383,11 @@ const useWalletStore = create<WalletState>((set, get) => ({
         throw new Error("Insufficient balance");
       }
 
-      walletSocket.emit("wallet:withdraw", address, amount);
+      walletSocket.emit(
+        "wallet:withdraw",
+        address,
+        kasToSompi(amount).toString(),
+      );
       toast.success("Withdrawal request submitted");
     } catch (error) {
       console.error("Error withdrawing balance:", error);

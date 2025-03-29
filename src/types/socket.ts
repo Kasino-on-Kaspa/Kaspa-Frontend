@@ -1,5 +1,13 @@
 import { Socket } from "socket.io-client";
-import { CoinFlipClientMessage, CoinFlipServerMessage } from "./coinflip";
+import {
+  CoinFlipClientMessage,
+  CoinFlipServerMessage,
+  TCoinflipAck,
+  TCoinflipSessionClientGameData,
+  TCoinflipSessionGameResult,
+  TCoinflipSessionJSON,
+} from "./coinflip";
+
 import {
   DieRollClientMessage,
   DieRollServerMessage,
@@ -8,6 +16,8 @@ import {
   TDierollSessionJSON,
 } from "./dieroll";
 import { User } from "./user";
+import { BaseBetType } from "./base";
+import { z } from "zod";
 
 // Event handler types
 export type SocketEventHandler = (...args: any[]) => void;
@@ -50,26 +60,24 @@ export interface ClientToServerEvents {
   "wallet:withdraw": (addr: string, bal: string) => void;
 
   // Coinflip events
-  [CoinFlipClientMessage.GET_SESSION_SEED]: (
-    callback: (serverSeedHash: string, sessionId?: string) => void,
+  [CoinFlipClientMessage.GET_SESSION]: (
+    callback: (
+      serverSeedHash: string,
+      sessionData?: { data: TCoinflipSessionJSON; resume_state: string },
+    ) => void,
   ) => void;
   [CoinFlipClientMessage.CREATE_BET]: (
-    bet_data: any,
-    ack: (response: { success: boolean; error?: string }) => void,
+    bet_data: z.infer<typeof BaseBetType>,
+    ack: (ack: TCoinflipAck) => void,
   ) => void;
   [CoinFlipClientMessage.FLIP_COIN]: (
-    session_id: string,
-    choice: "HEADS" | "TAILS",
-    ack: (response: { success: boolean; error?: string }) => void,
+    choice: TCoinflipSessionClientGameData,
+    ack: (ack: TCoinflipAck) => void,
   ) => void;
-  [CoinFlipClientMessage.CONTINUE_BET]: (
-    session_id: string,
-    ack: (response: { success: boolean; error?: string }) => void,
-  ) => void;
+
   [CoinFlipClientMessage.SESSION_NEXT]: (
-    session_id: string,
     option: "CASHOUT" | "CONTINUE",
-    ack: (response: { success: boolean; error?: string }) => void,
+    ack: (ack: TCoinflipAck) => void,
   ) => void;
 
   // Dieroll events
@@ -98,12 +106,18 @@ export interface ServerToClientEvents {
   "account:handshake": (data: HandshakeResponse) => void;
   "wallet:update": (data: { balance: string }) => void;
   // Coinflip events
-  [CoinFlipServerMessage.GAME_CHANGE_STATE]: (newState: any) => void;
-  [CoinFlipServerMessage.FLIP_RESULT]: (data: {
-    result: "HEADS" | "TAILS";
-    client_won: boolean;
+  [CoinFlipServerMessage.GAME_CHANGE_STATE]: ({
+    session,
+    new_state,
+  }: {
+    session: TCoinflipSessionJSON;
+    new_state: string;
   }) => void;
-  [CoinFlipServerMessage.GAME_ENDED]: () => void;
+  [CoinFlipServerMessage.FLIP_RESULT]: (data: {
+    session: TCoinflipSessionJSON;
+    result: TCoinflipSessionGameResult;
+  }) => void;
+  [CoinFlipServerMessage.GAME_ENDED]: (data: { serverSeed: string }) => void;
 
   // Dieroll events
   [DieRollServerMessage.ROLL_RESULT]: (result: TDieRollGameResult) => void;

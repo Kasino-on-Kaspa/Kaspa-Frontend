@@ -15,6 +15,7 @@ import { Route as IndexImport } from "./routes/index";
 import { Route as ReferralIndexImport } from "./routes/referral/index";
 import { Route as ComingSoonIndexImport } from "./routes/coming-soon/index";
 import { Route as GamesDicerollIndexImport } from "./routes/games/diceroll/index";
+import { Route as GamesCoinflipIndexImport } from "./routes/games/coinflip/index";
 
 // Create/Update Routes
 
@@ -39,6 +40,12 @@ const ComingSoonIndexRoute = ComingSoonIndexImport.update({
 const GamesDicerollIndexRoute = GamesDicerollIndexImport.update({
   id: "/games/diceroll/",
   path: "/games/diceroll/",
+  getParentRoute: () => rootRoute,
+} as any);
+
+const GamesCoinflipIndexRoute = GamesCoinflipIndexImport.update({
+  id: "/games/coinflip/",
+  path: "/games/coinflip/",
   getParentRoute: () => rootRoute,
 } as any);
 
@@ -67,6 +74,13 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof ReferralIndexImport;
       parentRoute: typeof rootRoute;
     };
+    "/games/coinflip/": {
+      id: "/games/coinflip/";
+      path: "/games/coinflip";
+      fullPath: "/games/coinflip";
+      preLoaderRoute: typeof GamesCoinflipIndexImport;
+      parentRoute: typeof rootRoute;
+    };
     "/games/diceroll/": {
       id: "/games/diceroll/";
       path: "/games/diceroll";
@@ -83,6 +97,7 @@ export interface FileRoutesByFullPath {
   "/": typeof IndexRoute;
   "/coming-soon": typeof ComingSoonIndexRoute;
   "/referral": typeof ReferralIndexRoute;
+  "/games/coinflip": typeof GamesCoinflipIndexRoute;
   "/games/diceroll": typeof GamesDicerollIndexRoute;
 }
 
@@ -90,6 +105,7 @@ export interface FileRoutesByTo {
   "/": typeof IndexRoute;
   "/coming-soon": typeof ComingSoonIndexRoute;
   "/referral": typeof ReferralIndexRoute;
+  "/games/coinflip": typeof GamesCoinflipIndexRoute;
   "/games/diceroll": typeof GamesDicerollIndexRoute;
 }
 
@@ -98,15 +114,32 @@ export interface FileRoutesById {
   "/": typeof IndexRoute;
   "/coming-soon/": typeof ComingSoonIndexRoute;
   "/referral/": typeof ReferralIndexRoute;
+  "/games/coinflip/": typeof GamesCoinflipIndexRoute;
   "/games/diceroll/": typeof GamesDicerollIndexRoute;
 }
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath;
-  fullPaths: "/" | "/coming-soon" | "/referral" | "/games/diceroll";
+  fullPaths:
+    | "/"
+    | "/coming-soon"
+    | "/referral"
+    | "/games/coinflip"
+    | "/games/diceroll";
   fileRoutesByTo: FileRoutesByTo;
-  to: "/" | "/coming-soon" | "/referral" | "/games/diceroll";
-  id: "__root__" | "/" | "/coming-soon/" | "/referral/" | "/games/diceroll/";
+  to:
+    | "/"
+    | "/coming-soon"
+    | "/referral"
+    | "/games/coinflip"
+    | "/games/diceroll";
+  id:
+    | "__root__"
+    | "/"
+    | "/coming-soon/"
+    | "/referral/"
+    | "/games/coinflip/"
+    | "/games/diceroll/";
   fileRoutesById: FileRoutesById;
 }
 
@@ -114,6 +147,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute;
   ComingSoonIndexRoute: typeof ComingSoonIndexRoute;
   ReferralIndexRoute: typeof ReferralIndexRoute;
+  GamesCoinflipIndexRoute: typeof GamesCoinflipIndexRoute;
   GamesDicerollIndexRoute: typeof GamesDicerollIndexRoute;
 }
 
@@ -121,6 +155,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ComingSoonIndexRoute: ComingSoonIndexRoute,
   ReferralIndexRoute: ReferralIndexRoute,
+  GamesCoinflipIndexRoute: GamesCoinflipIndexRoute,
   GamesDicerollIndexRoute: GamesDicerollIndexRoute,
 };
 
@@ -137,6 +172,7 @@ export const routeTree = rootRoute
         "/",
         "/coming-soon/",
         "/referral/",
+        "/games/coinflip/",
         "/games/diceroll/"
       ]
     },
@@ -148,6 +184,9 @@ export const routeTree = rootRoute
     },
     "/referral/": {
       "filePath": "referral/index.tsx"
+    },
+    "/games/coinflip/": {
+      "filePath": "games/coinflip/index.tsx"
     },
     "/games/diceroll/": {
       "filePath": "games/diceroll/index.tsx"

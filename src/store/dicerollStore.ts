@@ -11,6 +11,7 @@ import {
 } from "@/types/dieroll";
 import { getStoredTokens } from "@/lib/auth";
 import useSocketStore from "./socketStore";
+import useWalletStore from "./walletStore";
 const useDicerollStore = create<DicerollStore>((set, get) => ({
   isConnected: false,
   sessionData: null,
@@ -86,6 +87,7 @@ const useDicerollStore = create<DicerollStore>((set, get) => ({
 
   intializeListeners() {
     const dierollSocket = useSocketStore.getState().socket;
+    const walletStore = useWalletStore.getState();
     if (dierollSocket?.connected) {
       dierollSocket.on(
         DieRollServerMessage.ROLL_RESULT,
@@ -99,6 +101,7 @@ const useDicerollStore = create<DicerollStore>((set, get) => ({
         DieRollServerMessage.GAME_ENDED,
         ({ serverSeed }: { serverSeed: string }) => {
           console.log("Game ended:", serverSeed);
+          walletStore.refreshWalletBalance();
           set({ serverSeed: serverSeed });
         },
       );

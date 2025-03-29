@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import sha256 from "crypto-js/sha256";
 import Hex from "crypto-js/enc-hex";
+import { kasToSompi } from "@/lib/utils";
 
 interface RollResult {
   roll: number;
@@ -52,7 +53,6 @@ interface AutoBetSettings {
 export default function DieRollGame() {
   const navigate = useNavigate();
   const { isAuthenticated } = useWalletStore();
-  const { data: balance } = useWalletBalance();
   const {
     isConnected,
     rollResult,
@@ -372,7 +372,7 @@ export default function DieRollGame() {
 
       const betData = DieRollBetType.parse({
         client_seed: clientSeed,
-        amount: betAmount,
+        amount: kasToSompi(betAmount).toString(),
         condition,
         target: targetNumber,
       });
