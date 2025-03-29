@@ -1,6 +1,12 @@
 import { Socket } from "socket.io-client";
 import { CoinFlipClientMessage, CoinFlipServerMessage } from "./coinflip";
-import { DieRollServerMessage } from "./dieroll";
+import {
+  DieRollClientMessage,
+  DieRollServerMessage,
+  TDieRollAck,
+  TDieRollGameResult,
+  TDierollSessionJSON,
+} from "./dieroll";
 import { User } from "./user";
 
 // Event handler types
@@ -66,6 +72,18 @@ export interface ClientToServerEvents {
     ack: (response: { success: boolean; error?: string }) => void,
   ) => void;
 
+  // Dieroll events
+  [DieRollClientMessage.PLACE_BET]: (
+    bet_data: any,
+    ack: (ackStatus: TDieRollAck) => void,
+  ) => void;
+  [DieRollClientMessage.GET_SESSION]: (
+    callback: (
+      serverSeedHash: string,
+      sessionData: TDierollSessionJSON,
+    ) => void,
+  ) => void;
+
   // Default Socket.IO events
   disconnect: () => void;
 }
@@ -88,7 +106,7 @@ export interface ServerToClientEvents {
   [CoinFlipServerMessage.GAME_ENDED]: () => void;
 
   // Dieroll events
-
+  [DieRollServerMessage.ROLL_RESULT]: (result: TDieRollGameResult) => void;
   [DieRollServerMessage.GAME_ENDED]: ({
     serverSeed,
   }: {
@@ -121,6 +139,14 @@ export interface SocketState extends ConnectionState {
   connect: () => void;
   disconnect: () => void;
   cleanup: () => void;
+}
+
+export interface HandshakeResponse {
+  wallet: string;
+  address: string;
+  id: string;
+  username: string | null;
+  balance: string;
 }
 
 export interface HandshakeResponse {
