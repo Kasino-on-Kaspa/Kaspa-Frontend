@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import Hero from "@/assets/Hero.png";
+import Hero from "@/assets/banner.png";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import Dice from "@/assets/diceroll-cover.jpg";
 import Coinflip from "@/assets/coinflip-cover.jpg";
@@ -16,7 +16,7 @@ function Index() {
     <div className="p-4">
       <div
         style={{ backgroundImage: `url(${Hero})` }}
-        className="rounded-3xl bg-cover bg-center bg-no-repeat h-[350px]"
+        className="rounded-3xl bg-cover bg-center bg-no-repeat h-1/2 aspect-[10/4] w-full"
       />
       <div className="flex items-center gap-2 py-5">
         <Icon icon="mdi:dice" className="text-white/50 text-2xl" />
