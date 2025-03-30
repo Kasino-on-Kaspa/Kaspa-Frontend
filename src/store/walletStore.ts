@@ -32,6 +32,7 @@ interface WalletState {
   userData: UserData | null;
   isWithdrawing: boolean;
   isDepositing: boolean;
+  isRefershing: boolean;
   lastBalanceUpdate: number | null;
   setWallet: (wallet: KaspaWallet | null) => void;
   setAddress: (address: string) => void;
@@ -71,7 +72,7 @@ const useWalletStore = create<WalletState>((set, get) => ({
   isWithdrawing: false,
   isDepositing: false,
   lastBalanceUpdate: null,
-
+  isRefershing: false,
   setWallet: (wallet) => set({ wallet }),
   setAddress: (address) => set({ address }),
   setBalance: (balance) => {
@@ -329,6 +330,8 @@ const useWalletStore = create<WalletState>((set, get) => ({
         try {
           const now = Date.now();
 
+          console.log("Hello");
+
           // Only update if enough time has passed since last update
 
           set({
@@ -339,6 +342,7 @@ const useWalletStore = create<WalletState>((set, get) => ({
             lastBalanceUpdate: now,
             isWithdrawing: false,
             isDepositing: false,
+            isRefershing: false,
           });
 
           get().refreshWalletBalance();
@@ -391,6 +395,9 @@ const useWalletStore = create<WalletState>((set, get) => ({
 
       // Update onsite balance through socket
       if (walletSocket) {
+        set({
+          isRefershing: true,
+        });
         walletSocket.emit("wallet:refresh");
       }
     } catch (error) {

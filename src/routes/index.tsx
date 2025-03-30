@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import Hero from "@/assets/Hero.png";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import Dice from "@/assets/Diceroll.png";
@@ -25,16 +25,20 @@ function Index() {
         </span>
       </div>
       <div className="flex items-center gap-5">
-        <img
-          src={Dice}
-          alt="Dice"
-          className="rounded-3xl w-[200px] cursor-pointer"
-        />
-        <img
-          src={Coinflip}
-          alt="Coinflip"
-          className="rounded-3xl w-[200px] cursor-pointer"
-        />
+        <Link to="/games/diceroll">
+          <img
+            src={Dice}
+            alt="Dice"
+            className="rounded-3xl w-[200px] cursor-pointer"
+          />
+        </Link>
+        <Link to="/games/coinflip">
+          <img
+            src={Coinflip}
+            alt="Coinflip"
+            className="rounded-3xl w-[200px] cursor-pointer"
+          />
+        </Link>
       </div>
     </div>
   );

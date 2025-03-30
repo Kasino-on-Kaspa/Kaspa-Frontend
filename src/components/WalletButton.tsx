@@ -35,6 +35,7 @@ export default function WalletButton() {
     initWallet,
     refreshWalletBalance,
     onSiteBalance,
+    isRefershing,
     handleBalanceChanged,
   } = useWalletStore();
 
@@ -230,18 +231,33 @@ export default function WalletButton() {
           userAddress={address}
         />
         <div className="p-3 bg-white/5 rounded-2xl -mt-2">
-          <p className="text-xs font-Onest text-[#6fc7ba] pb-1">
-            Wallet Details
-          </p>
-          <div className="flex items-center gap-2 pb-1">
-            <Icon icon="ph:wallet" className="text-xs text-[#6fc7ba]" />
-            <p className="text-xs font-Onest text-[#6fc7ba]">Onsite Balance:</p>
-            <p className="text-xs font-Onest text-[#6fc7ba]">
-              {onSiteBalance?.balance
-                ? formatKAS(BigInt(onSiteBalance.balance))
-                : "0.00000000"}
-              KAS
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-Onest text-[#6fc7ba] pb-1">
+              Wallet Details
             </p>
+            <div>
+              <Icon
+                icon={`material-symbols:replay`}
+                className={`cursor-pointer text-white/80 ${isRefershing ? "animate-spin" : ""}`}
+                onClick={() => {
+                  refreshWalletBalance();
+                }}
+              />
+            </div>
+          </div>
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-2 pb-1">
+              <Icon icon="ph:wallet" className="text-xs text-[#6fc7ba]" />
+              <p className="text-xs font-Onest text-[#6fc7ba]">
+                Onsite Balance:
+              </p>
+              <p className="text-xs font-Onest text-[#6fc7ba]">
+                {onSiteBalance?.balance
+                  ? formatKAS(BigInt(onSiteBalance.balance))
+                  : "0.00000000"}
+                KAS
+              </p>
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <Icon icon="ph:globe-simple" className="text-xs text-[#6fc7ba]" />
