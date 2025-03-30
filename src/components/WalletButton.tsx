@@ -196,11 +196,9 @@ export default function WalletButton() {
           </div>
           <div className="flex items-center gap-2 mt-2">
             <p className="text-base tracking-tighter font-light font-Onest text-[#6fc7ba]">
-              {balance?.total
-                ? formatKAS(BigInt(balance.total))
-                : onSiteBalance?.balance
-                  ? formatKAS(BigInt(onSiteBalance.balance))
-                  : "0.00000000"}
+              {onSiteBalance?.balance
+                ? formatKAS(BigInt(onSiteBalance.balance))
+                : "0.00"}{" "}
               KAS
             </p>
           </div>
@@ -214,7 +212,7 @@ export default function WalletButton() {
               className="text-lg text-[#6fc7ba]"
             />
             <p className="text-sm font-Onest font-extralight tracking-tight text-[#6fc7ba]">
-              Callisto Wallet
+              kasino.city
             </p>
           </div>
           <button
@@ -226,14 +224,11 @@ export default function WalletButton() {
             Disconnect
           </button>
         </div>
-        <Balance
-          userBalance={formatKAS(BigInt(balance?.total || 0))}
-          userAddress={address}
-        />
+        <Balance userAddress={onSiteBalance?.address} />
         <div className="p-3 bg-white/5 rounded-2xl -mt-2">
           <div className="flex items-center justify-between">
             <p className="text-xs font-Onest text-[#6fc7ba] pb-1">
-              Wallet Details
+              Connected Wallet Details
             </p>
             <button
               onClick={() => {
@@ -250,12 +245,10 @@ export default function WalletButton() {
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-2 pb-1">
               <Icon icon="ph:wallet" className="text-xs text-[#6fc7ba]" />
+              <p className="text-xs font-Onest text-[#6fc7ba]">Balance:</p>
               <p className="text-xs font-Onest text-[#6fc7ba]">
-                Onsite Balance:
-              </p>
-              <p className="text-xs font-Onest text-[#6fc7ba]">
-                {onSiteBalance?.balance
-                  ? formatKAS(BigInt(onSiteBalance.balance))
+                {balance?.total
+                  ? formatKAS(BigInt(balance.total))
                   : "0.00000000"}
                 KAS
               </p>
@@ -264,16 +257,16 @@ export default function WalletButton() {
           <div className="flex items-center gap-2">
             <Icon icon="ph:globe-simple" className="text-xs text-[#6fc7ba]" />
             <p className="text-xs font-Onest text-[#6fc7ba]">
-              Deposit Address:
+              Connected Wallet Address:
             </p>
             <div className="flex items-center gap-1">
               <p className="text-xs font-Onest text-[#6fc7ba]">
-                {formatAddress(onSiteBalance?.address || "")}
+                {formatAddress(address || "")}
               </p>
               <button
                 className="text-xs font-Onest text-[#6fc7ba]"
                 onClick={() => {
-                  navigator.clipboard.writeText(onSiteBalance?.address || "");
+                  navigator.clipboard.writeText(address || "");
                 }}
               >
                 <Icon icon="ph:copy" className="text-xs cursor-pointer" />

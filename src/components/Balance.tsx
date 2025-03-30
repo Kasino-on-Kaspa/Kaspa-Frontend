@@ -2,17 +2,18 @@
 
 import { LineChart, Line, ResponsiveContainer, YAxis } from "recharts";
 import { useKaspaData, useKaspaHistoricalData } from "../hooks/useKaspaData";
-import { formatAddress } from "@/lib/utils";
+import { formatAddress, formatKAS } from "@/lib/utils";
+import useWalletStore from "@/store/walletStore";
+import { Icon } from "@iconify/react/dist/iconify.js";
 export default function Balance({
-  userBalance,
   userAddress,
 }: {
-  userBalance: string | undefined;
   userAddress: string | undefined;
 }) {
   const { data: kaspaData, isLoading: isLoadingKaspa } = useKaspaData();
   const { data: historicalData, isLoading: isLoadingHistorical } =
     useKaspaHistoricalData("1d");
+  const { onSiteBalance } = useWalletStore();
 
   if (isLoadingKaspa || isLoadingHistorical) {
     return (
@@ -44,14 +45,24 @@ export default function Balance({
   return (
     <div className="space-y-3 p-3 rounded-2xl bg-white/5">
       <div>
-        {userAddress && (
-          <p className="text-white/50 font-light mb-1 leading-none text-xs">
-            {formatAddress(userAddress)}
+        <div className="flex items-center gap-1">
+          <p className="text-xs font-Onest text-[#6fc7ba]">
+            {formatAddress(userAddress || "")}
           </p>
-        )}
+          <button
+            className="text-xs font-Onest text-[#6fc7ba]"
+            onClick={() => {
+              navigator.clipboard.writeText(userAddress || "");
+            }}
+          >
+            <Icon icon="ph:copy" className="text-xs cursor-pointer" />
+          </button>
+        </div>
         <div className="flex items-end gap-1">
           <p className="text-white/80 font-semibold leading-none text-2xl">
-            {userBalance}
+            {onSiteBalance?.balance
+              ? formatKAS(BigInt(onSiteBalance.balance))
+              : "0.00"}
           </p>
           <p className="text-[10px] leading-4 text-white/80">KAS</p>
         </div>
