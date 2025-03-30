@@ -8,6 +8,7 @@ import {
   useMotionValue,
   useTransform,
 } from "framer-motion";
+import { Link } from "@tanstack/react-router";
 
 import Logo from "../assets/Logo.png";
 
@@ -16,7 +17,6 @@ import PrizeFeed from "./PrizeFeed";
 import KaspaPriceFeed from "./KaspaPriceFeed";
 import SwipeGuide from "./SwipeGuide";
 import WalletButton from "./WalletButton";
-import { Link } from "@tanstack/react-router";
 
 const navLinks = [
   {
@@ -28,6 +28,11 @@ const navLinks = [
     href: "#about",
     icon: "ph:question-fill",
     label: "About",
+  },
+  {
+    href: "/leaderboard",
+    icon: "ph:trophy-fill",
+    label: "Leaderboard",
   },
 ];
 
@@ -100,19 +105,33 @@ export default function Navbar() {
         </Link>
         <KaspaPriceFeed />
         <div className="bg-[#2A2A2A] rounded-xl p-3 space-y-2">
-          {navLinks.map((link, index) => (
-            <a
-              key={index}
-              href={link.href}
-              className="flex items-center gap-2.5 text-[11px] text-white/70 hover:text-[#6fc7ba] transition-colors p-2 rounded-lg hover:bg-white/5"
-              onClick={() => setIsOpen(false)}
-            >
-              <div className="bg-white/10 p-1.5 rounded-lg">
-                <Icon icon={link.icon} className="text-sm" />
-              </div>
-              {link.label}
-            </a>
-          ))}
+          {navLinks.map((link, index) =>
+            link.href.startsWith("#") ? (
+              <a
+                key={index}
+                href={link.href}
+                className="flex items-center gap-2.5 text-[11px] text-white/70 hover:text-[#6fc7ba] transition-colors p-2 rounded-lg hover:bg-white/5"
+                onClick={() => setIsOpen(false)}
+              >
+                <div className="bg-white/10 p-1.5 rounded-lg">
+                  <Icon icon={link.icon} className="text-sm" />
+                </div>
+                {link.label}
+              </a>
+            ) : (
+              <Link
+                key={index}
+                to={link.href}
+                className="flex items-center gap-2.5 text-[11px] text-white/70 hover:text-[#6fc7ba] transition-colors p-2 rounded-lg hover:bg-white/5"
+                onClick={() => setIsOpen(false)}
+              >
+                <div className="bg-white/10 p-1.5 rounded-lg">
+                  <Icon icon={link.icon} className="text-sm" />
+                </div>
+                {link.label}
+              </Link>
+            ),
+          )}
         </div>
       </div>
       <div className="space-y-3 mt-3 flex-1 overflow-y-auto scrollbar rounded-xl">
