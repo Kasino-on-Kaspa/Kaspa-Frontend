@@ -32,7 +32,7 @@ interface WalletState {
   userData: UserData | null;
   isWithdrawing: boolean;
   isDepositing: boolean;
-  isRefershing: boolean;
+  isRefreshing: boolean;
   lastBalanceUpdate: number | null;
   setWallet: (wallet: KaspaWallet | null) => void;
   setAddress: (address: string) => void;
@@ -72,7 +72,7 @@ const useWalletStore = create<WalletState>((set, get) => ({
   isWithdrawing: false,
   isDepositing: false,
   lastBalanceUpdate: null,
-  isRefershing: false,
+  isRefreshing: false,
   setWallet: (wallet) => set({ wallet }),
   setAddress: (address) => set({ address }),
   setBalance: (balance) => {
@@ -86,6 +86,7 @@ const useWalletStore = create<WalletState>((set, get) => ({
         lastBalanceUpdate: Date.now(),
         isWithdrawing: false,
         isDepositing: false,
+        isRefreshing: false,
       });
     } catch (error) {
       console.error("Error setting balance:", error);
@@ -114,6 +115,7 @@ const useWalletStore = create<WalletState>((set, get) => ({
       isWithdrawing: false,
       isDepositing: false,
       lastBalanceUpdate: null,
+      isRefreshing: false,
     });
   },
   checkAuthExpiry: async () => {
@@ -342,20 +344,22 @@ const useWalletStore = create<WalletState>((set, get) => ({
             lastBalanceUpdate: now,
             isWithdrawing: false,
             isDepositing: false,
-            isRefershing: false,
+            isRefreshing: false,
           });
 
-          get().refreshWalletBalance();
+          // Potentially trigger a wallet balance refresh if needed, but avoid infinite loops
+          // get().refreshWalletBalance(); // Consider if this is still necessary here
         } catch (error) {
           console.error("Error updating onsite balance:", error);
           toast.error("Failed to update onsite balance");
+          set({ isRefreshing: false });
         }
       });
 
       socket.on("wallet:error", ({ message }) => {
         console.error("Wallet error:", message);
         toast.error(message);
-        set({ isWithdrawing: false, isDepositing: false });
+        set({ isWithdrawing: false, isDepositing: false, isRefreshing: false });
       });
     } catch (error) {
       set({
@@ -363,47 +367,57 @@ const useWalletStore = create<WalletState>((set, get) => ({
         authError: "Error initializing wallet socket listeners",
         isWithdrawing: false,
         isDepositing: false,
+        isRefreshing: false,
       });
       console.error("Error initializing wallet socket listeners:", error);
       toast.error("Failed to initialize wallet connection");
     }
   },
   refreshWalletBalance: async () => {
+    if (get().isRefreshing) {
+      console.log("Refresh already in progress, skipping.");
+      return;
+    }
+
     const walletSocket = useSocketStore.getState().socket;
     const { wallet, lastBalanceUpdate } = get();
     const now = Date.now();
 
-    // Check if enough time has passed since last update
+    // Check cooldown
     if (
       lastBalanceUpdate &&
       now - lastBalanceUpdate < BALANCE_UPDATE_COOLDOWN
     ) {
+      console.log("Balance refresh cooldown active, skipping.");
       return;
     }
 
     try {
+      set({ isRefreshing: true });
+
+      setTimeout(() => {
+        set({ isRefreshing: false });
+        throw new Error("Refresh Timeout");
+      }, 10000);
+
       // Update local wallet balance
       if (wallet) {
         const balance = await wallet.getBalance();
         set({
           balance,
-          lastBalanceUpdate: now,
-          isWithdrawing: false,
-          isDepositing: false,
         });
       }
 
       // Update onsite balance through socket
       if (walletSocket) {
-        set({
-          isRefershing: true,
-        });
         walletSocket.emit("wallet:refresh");
+      } else {
+        set({ isRefreshing: false, lastBalanceUpdate: now });
       }
     } catch (error) {
       console.error("Error refreshing wallet balance:", error);
       toast.error("Failed to refresh wallet balance");
-      set({ isWithdrawing: false, isDepositing: false });
+      set({ isRefreshing: false });
     }
   },
   withdrawBalance: async (amount: string) => {
@@ -456,19 +470,15 @@ const useWalletStore = create<WalletState>((set, get) => ({
               unconfirmed: get().balance?.unconfirmed || 0,
             },
             lastBalanceUpdate: now,
-            isWithdrawing: false,
-            isDepositing: false,
           });
 
-          console.log("Hello");
-
+          // Trigger onsite balance refresh after local balance change settles
           get().refreshWalletBalance();
         }
       }
     } catch (error) {
       console.error("Error handling balance change:", error);
       toast.error("Failed to update wallet balance");
-      set({ isWithdrawing: false, isDepositing: false });
     }
   },
 }));

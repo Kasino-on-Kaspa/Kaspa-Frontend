@@ -16,6 +16,7 @@ import PrizeFeed from "./PrizeFeed";
 import KaspaPriceFeed from "./KaspaPriceFeed";
 import SwipeGuide from "./SwipeGuide";
 import WalletButton from "./WalletButton";
+import { Link } from "@tanstack/react-router";
 
 const navLinks = [
   {
@@ -88,7 +89,7 @@ export default function Navbar() {
   const sidebarContent = (
     <div className="flex flex-col h-full">
       <div className="flex flex-col gap-3">
-        <div className="flex items-center gap-2">
+        <Link to="/" className="flex items-center gap-2">
           <img
             src={Logo}
             alt="Kasino Logo"
@@ -96,7 +97,7 @@ export default function Navbar() {
             height={70}
             className=""
           />
-        </div>
+        </Link>
         <KaspaPriceFeed />
         <div className="bg-[#2A2A2A] rounded-xl p-3 space-y-2">
           {navLinks.map((link, index) => (
@@ -129,7 +130,7 @@ export default function Navbar() {
       <SwipeGuide />
 
       {/* Desktop Sidebar */}
-      <div className="fixed top-0 left-0 h-screen mt-10 w-[245px] bg-[#1A1A1A] border-r border-white/10 hidden lg:block">
+      <div className="fixed top-0 left-0 h-screen mt-10 w-[245px] bg-[#1A1A1A] border-r border-white/10 hidden md:block">
         <nav className="h-[calc(100vh-40px)] border-r border-white/10 flex-col p-4 z-30 bg-[#231f20] font-medium text-base w-[245px] overflow-y-auto scrollbar">
           {sidebarContent}
         </nav>

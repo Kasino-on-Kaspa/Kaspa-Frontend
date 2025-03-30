@@ -35,7 +35,7 @@ export default function WalletButton() {
     initWallet,
     refreshWalletBalance,
     onSiteBalance,
-    isRefershing,
+    isRefreshing,
     handleBalanceChanged,
   } = useWalletStore();
 
@@ -235,15 +235,17 @@ export default function WalletButton() {
             <p className="text-xs font-Onest text-[#6fc7ba] pb-1">
               Wallet Details
             </p>
-            <div>
-              <Icon
-                icon={`material-symbols:replay`}
-                className={`cursor-pointer text-white/80 ${isRefershing ? "animate-spin" : ""}`}
-                onClick={() => {
+            <button
+              onClick={() => {
+                if (!isRefreshing) {
                   refreshWalletBalance();
-                }}
-              />
-            </div>
+                }
+              }}
+              disabled={isRefreshing}
+              className={`cursor-pointer text-white/80 ${isRefreshing ? "opacity-50 cursor-not-allowed animate-spin" : "hover:text-white"}`}
+            >
+              <Icon icon={`material-symbols:replay`} />
+            </button>
           </div>
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-2 pb-1">
