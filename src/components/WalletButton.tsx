@@ -35,7 +35,6 @@ export default function WalletButton() {
     initWallet,
     refreshWalletBalance,
     onSiteBalance,
-    isRefershing,
     handleBalanceChanged,
   } = useWalletStore();
 
@@ -196,11 +195,9 @@ export default function WalletButton() {
           </div>
           <div className="flex items-center gap-2 mt-2">
             <p className="text-base tracking-tighter font-light font-Onest text-[#6fc7ba]">
-              {balance?.total
-                ? formatKAS(BigInt(balance.total))
-                : onSiteBalance?.balance
-                  ? formatKAS(BigInt(onSiteBalance.balance))
-                  : "0.00000000"}
+              {onSiteBalance?.balance
+                ? formatKAS(BigInt(onSiteBalance.balance))
+                : "0.00"}{" "}
               KAS
             </p>
           </div>
@@ -214,7 +211,7 @@ export default function WalletButton() {
               className="text-lg text-[#6fc7ba]"
             />
             <p className="text-sm font-Onest font-extralight tracking-tight text-[#6fc7ba]">
-              Callisto Wallet
+              kasino.city
             </p>
           </div>
           <button
@@ -226,38 +223,20 @@ export default function WalletButton() {
             Disconnect
           </button>
         </div>
-        <Balance
-          userBalance={formatKAS(BigInt(balance?.total || 0))}
-          userAddress={address}
-        />
+        <Balance userAddress={address} />
         <div className="p-3 bg-white/5 rounded-2xl -mt-2">
-          <div className="flex items-center justify-between">
-            <p className="text-xs font-Onest text-[#6fc7ba] pb-1">
-              Wallet Details
+          <p className="text-xs font-Onest text-[#6fc7ba] pb-1">
+            Wallet Details
+          </p>
+          <div className="flex items-center gap-2 pb-1">
+            <Icon icon="ph:wallet" className="text-xs text-[#6fc7ba]" />
+            <p className="text-xs font-Onest text-[#6fc7ba]">
+              Connected Wallet Balance:
             </p>
-            <div>
-              <Icon
-                icon={`material-symbols:replay`}
-                className={`cursor-pointer text-white/80 ${isRefershing ? "animate-spin" : ""}`}
-                onClick={() => {
-                  refreshWalletBalance();
-                }}
-              />
-            </div>
-          </div>
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-2 pb-1">
-              <Icon icon="ph:wallet" className="text-xs text-[#6fc7ba]" />
-              <p className="text-xs font-Onest text-[#6fc7ba]">
-                Onsite Balance:
-              </p>
-              <p className="text-xs font-Onest text-[#6fc7ba]">
-                {onSiteBalance?.balance
-                  ? formatKAS(BigInt(onSiteBalance.balance))
-                  : "0.00000000"}
-                KAS
-              </p>
-            </div>
+            <p className="text-xs font-Onest text-[#6fc7ba]">
+              {balance?.total ? formatKAS(BigInt(balance.total)) : "0.00"}
+              KAS
+            </p>
           </div>
           <div className="flex items-center gap-2">
             <Icon icon="ph:globe-simple" className="text-xs text-[#6fc7ba]" />

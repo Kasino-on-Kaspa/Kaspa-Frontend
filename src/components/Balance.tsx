@@ -2,17 +2,17 @@
 
 import { LineChart, Line, ResponsiveContainer, YAxis } from "recharts";
 import { useKaspaData, useKaspaHistoricalData } from "../hooks/useKaspaData";
-import { formatAddress } from "@/lib/utils";
+import { formatAddress, formatKAS } from "@/lib/utils";
+import useWalletStore from "@/store/walletStore";
 export default function Balance({
-  userBalance,
   userAddress,
 }: {
-  userBalance: string | undefined;
   userAddress: string | undefined;
 }) {
   const { data: kaspaData, isLoading: isLoadingKaspa } = useKaspaData();
   const { data: historicalData, isLoading: isLoadingHistorical } =
     useKaspaHistoricalData("1d");
+  const { onSiteBalance } = useWalletStore();
 
   if (isLoadingKaspa || isLoadingHistorical) {
     return (
@@ -51,7 +51,9 @@ export default function Balance({
         )}
         <div className="flex items-end gap-1">
           <p className="text-white/80 font-semibold leading-none text-2xl">
-            {userBalance}
+            {onSiteBalance?.balance
+              ? formatKAS(BigInt(onSiteBalance.balance))
+              : "0.00"}
           </p>
           <p className="text-[10px] leading-4 text-white/80">KAS</p>
         </div>
