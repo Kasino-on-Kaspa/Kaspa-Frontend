@@ -1,8 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import Hero from "@/assets/Hero.png";
 import { Icon } from "@iconify/react/dist/iconify.js";
-import Dice from "@/assets/Diceroll.png";
-import Coinflip from "@/assets/Coinflip.png";
+import Dice from "@/assets/diceroll-cover.jpg";
+import Coinflip from "@/assets/coinflip-cover.jpg";
 
 export const Route = createFileRoute("/")({
   component: Index,
