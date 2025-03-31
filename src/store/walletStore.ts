@@ -374,6 +374,7 @@ const useWalletStore = create<WalletState>((set, get) => ({
     }
   },
   refreshWalletBalance: async () => {
+    console.log("hello123123123");
     if (get().isRefreshing) {
       console.log("Refresh already in progress, skipping.");
       return;
