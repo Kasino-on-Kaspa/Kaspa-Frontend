@@ -3,6 +3,9 @@ import { useEffect, useState } from "react";
 import { Icon } from "@iconify/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "../ui/button";
+import CoinFlipBet from "./CoinFlipBet";
+
+import ProvablyFair from "./ProvablyFair";
 import { Input } from "../ui/input";
 
 export default function CoinflipGame() {
@@ -178,29 +181,32 @@ export default function CoinflipGame() {
   }
 
   return (
-    <div className="p-8 space-y-6">
-      {/* Game Status */}
-      {sessionData?.sessionId && (
-        <div className="bg-[#2A2A2A] rounded-xl p-4">
-          <h3 className="text-sm font-medium text-white/90 mb-2">
-            Current Game
-          </h3>
-          <div className="text-xs text-white/60">
-            <p>
-              Session ID:{" "}
-              <span className="text-white/90">{sessionData.sessionId}</span>
-            </p>
-            {sessionData.clientGameData && (
-              <p>
-                Your Choice:{" "}
-                <span className="text-white/90">
-                  {sessionData.clientGameData}
-                </span>
+    <div className="h-full">
+      <div className="flex flex-col lg:flex-row gap-4 h-full">
+        {/* Betting Section */}
+        <div className="lg:border-r lg:pr-4 border-white/10 p-4 h-full">
+          <div className="flex justify-between w-full lg:w-[350px] mb-3 border border-white/10 bg-[#444] rounded-xl p-2">
+            <div className="w-fit flex items-center gap-2">
+              <Icon icon="ph:check-circle-fill" className="text-green-500" />
+              <p className="text-[10px] md:text-xs font-Onest font-black text-green-500">
+                {isConnected ? "CONNECTED" : "DISCONNECTED"}
               </p>
-            )}
+            </div>
+
+            <ProvablyFair
+              sessionId={sessionData?.sessionId ?? ""}
+              clientSeed={clientSeed}
+              setClientSeed={setClientSeed}
+              serverSeedHash={serverSeed ?? ""}
+            />
           </div>
+          <CoinFlipBet
+            handleCreateBet={handleCreateBet}
+            betAmount={betAmount}
+            setBetAmount={setBetAmount}
+          />
         </div>
-      )}
+      </div>
 
       {/* Game Controls */}
       <div className="bg-[#2A2A2A] rounded-xl p-4 space-y-4">

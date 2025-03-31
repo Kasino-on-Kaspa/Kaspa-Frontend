@@ -93,3 +93,15 @@ export type TDieRollAck =
       status: "ERROR";
       message: string;
     };
+
+export interface RollHistory {
+  roll: number;
+  multiplier: number;
+  profit: number;
+  timestamp: number;
+  clientSeed: string;
+  serverSeed?: string;
+  serverSeedHash: string;
+  target: number;
+  condition: "OVER" | "UNDER";
+}
