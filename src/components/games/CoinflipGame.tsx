@@ -8,6 +8,9 @@ import headsCoin from "@/assets/games/coinflip/Component 1.svg";
 import tailsCoin from "@/assets/games/coinflip/Component 3.svg";
 import headsGif from "@/assets/games/coinflip/Heads.gif";
 import tailsGif from "@/assets/games/coinflip/Tails.gif";
+import useWalletStore from "@/store/walletStore";
+import { useRouter } from "@tanstack/react-router";
+import { toast } from "sonner";
 
 export default function CoinflipGame() {
   const {
@@ -26,6 +29,10 @@ export default function CoinflipGame() {
     selectedSide,
   } = useCoinflipStore();
 
+  const { isAuthenticated } = useWalletStore();
+
+  const router = useRouter();
+
   const [betAmount, setBetAmount] = useState<string>("10");
   const [clientSeed, setClientSeed] = useState<string>("");
   const [isFlipping, setIsFlipping] = useState(false);
@@ -34,6 +41,13 @@ export default function CoinflipGame() {
   const [showResult, setShowResult] = useState(false);
   const [currentGif, setCurrentGif] = useState<string | null>(null);
   const [isAnimating, setIsAnimating] = useState(false);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      toast.error("Please connect your wallet to play");
+      router.navigate({ to: "/" });
+    }
+  }, [isAuthenticated, router]);
 
   // Handle existing session on mount
   useEffect(() => {
@@ -71,18 +85,26 @@ export default function CoinflipGame() {
     flipCoin(selectedSide);
   };
 
-  const handleNext = (option: "CASHOUT" | "CONTINUE") => {
+  const handleNext = async (option: "CASHOUT" | "CONTINUE") => {
     if (option === "CASHOUT") {
       setGameEnded(true);
       setBetAmount("10");
       setClientSeed(Math.random().toString(36).substring(2, 15));
+    } else {
+      // For CONTINUE, reset all animation and result states first
+      setShowResult(false);
+      setIsAnimating(false);
+      setCurrentGif(null);
+      setIsFlipping(false);
+      // Clear the flip result by setting it to null in the store
+      await sessionNext(option);
     }
     sessionNext(option);
   };
 
   // Handle flip result with animation
   useEffect(() => {
-    if (flipResult) {
+    if (flipResult && isFlipping) {
       console.log("Flip Result Received:", flipResult);
       setIsFlipping(true);
       setIsAnimating(true);
@@ -90,7 +112,7 @@ export default function CoinflipGame() {
       console.log("Selected GIF:", selectedGif);
       setCurrentGif(selectedGif);
 
-      // Wait for GIF to complete one cycle (3 seconds)
+      // Wait for GIF to complete one cycle (1 second)
       const gifTimer = setTimeout(() => {
         setShowResult(true);
         const selectedCoin = flipResult === "HEADS" ? headsCoin : tailsCoin;
@@ -106,14 +128,14 @@ export default function CoinflipGame() {
           if (flipResult !== selectedSide) {
             setGameEnded(true);
           }
-        }, 1000);
+        }, 800); // Increased from 200ms to 800ms to show result longer
 
         return () => clearTimeout(resultTimer);
-      }, 3000);
+      }, 1000); // Keeping GIF timing at 1 second
 
       return () => clearTimeout(gifTimer);
     }
-  }, [flipResult, selectedSide]);
+  }, [flipResult, selectedSide, isFlipping]);
 
   if (gameState === "TIMEOUT") {
     return (
@@ -309,9 +331,7 @@ export default function CoinflipGame() {
           <CoinFlipBet
             handleCreateBet={handleCreateBet}
             betAmount={betAmount}
-            clientSeed={clientSeed}
             setBetAmount={setBetAmount}
-            setClientSeed={setClientSeed}
           />
         </div>
 

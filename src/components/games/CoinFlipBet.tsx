@@ -6,16 +6,14 @@ import useCoinflipStore from "@/store/coinflipStore";
 
 export default function CoinFlipBet({
   betAmount,
-  clientSeed,
+
   setBetAmount,
-  setClientSeed,
+
   handleCreateBet,
 }: {
   betAmount: string;
   handleCreateBet: () => void;
-  clientSeed: string;
   setBetAmount: (amount: string) => void;
-  setClientSeed: (seed: string) => void;
 }) {
   const { onSiteBalance } = useWalletStore();
   const { gameState } = useCoinflipStore();
