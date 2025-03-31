@@ -13,6 +13,7 @@ import { kasToSompi } from "@/lib/utils";
 import useWalletStore from "./walletStore";
 
 const useCoinflipStore = create<CoinflipStore>((set, get) => ({
+  selectedSide: null,
   isConnected: false,
   flipResult: null,
   sessionData: null,
@@ -20,6 +21,10 @@ const useCoinflipStore = create<CoinflipStore>((set, get) => ({
   serverSeed: null,
   gameSessionError: null,
   serverSeedHash: null,
+  setSelectedSide: (side: TCoinflipSessionClientGameData) => {
+    console.log("Setting selected side:", side);
+    set({ selectedSide: side });
+  },
   initializeGame: () => {
     try {
       const coinflipSocket = useSocketStore.getState().socket;
@@ -56,7 +61,7 @@ const useCoinflipStore = create<CoinflipStore>((set, get) => ({
             serverSeedHash: string,
             sessionData?: { data: TCoinflipSessionJSON; resume_state: string },
           ) => {
-            console.log(sessionData);
+            console.log("Session data received:", sessionData);
             set({
               serverSeedHash,
               sessionData: sessionData?.data,
@@ -98,7 +103,7 @@ const useCoinflipStore = create<CoinflipStore>((set, get) => ({
       coinflipSocket.on(
         CoinFlipServerMessage.GAME_CHANGE_STATE,
         ({ session, new_state }) => {
-          if (new_state == "END") {
+          if (new_state === "END") {
             walletStore.refreshWalletBalance();
           }
           set({
@@ -116,6 +121,7 @@ const useCoinflipStore = create<CoinflipStore>((set, get) => ({
       gameState: null,
       serverSeed: null,
       gameSessionError: null,
+      selectedSide: null,
     });
   },
   createBet: (clientSeed: string, betAmount: string) => {

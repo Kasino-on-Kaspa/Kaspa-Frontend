@@ -55,11 +55,10 @@ export default function CoinflipPage() {
   };
 
   return (
-    <div className="min-h-screen w-full bg-[#1a1718] font-Onest text-white">
+    <div className="min-h-screen w-full  font-Onest text-white">
       <div className="w-full px-4 py-8">
         <div className="space-y-8">
-          {/* Game Section */}
-          <div className="bg-[#111] rounded-3xl overflow-hidden w-full">
+          <div className="bg-[#2A2A2A] rounded-[35px] h-[500px] overflow-hidden w-full">
             <CoinflipGame />
           </div>
 
