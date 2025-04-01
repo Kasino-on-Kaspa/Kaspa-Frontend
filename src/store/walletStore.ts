@@ -183,15 +183,6 @@ const useWalletStore = create<WalletState>((set, get) => ({
           toast.error("Failed to fetch wallet balance");
         }
 
-        const tokens = getStoredTokens();
-        if (tokens) {
-          set({
-            isAuthenticated: true,
-            authError: null,
-          });
-          return;
-        }
-
         await get().authenticate();
       }
     } catch (error) {

@@ -65,6 +65,10 @@ const BetControls = memo(
   }) => {
     return (
       <div className="space-y-3">
+        <p className="text-sm text-white/70 font-Onest uppercase font-bold flex items-center gap-2">
+          <Icon icon="mdi:cash-multiple" className="h-5 w-5" />
+          BET AMOUNT
+        </p>
         <ManualBet
           onSiteBalance={onSiteBalance}
           betAmount={betAmount}
@@ -76,46 +80,52 @@ const BetControls = memo(
             {/* Number of Bets */}
             <div>
               <div className="flex justify-between mb-2">
-                <span className="text-sm text-white/70">Number of Bets</span>
+                <span className="text-sm text-white/70 font-Onest uppercase font-bold">
+                  Number of Bets
+                </span>
               </div>
-              <div className="relative">
-                <input
-                  type="number"
-                  value={
-                    autoBetSettings.numberOfBets === "infinity"
-                      ? "0"
-                      : autoBetSettings.numberOfBets
-                  }
-                  onChange={(e) => {
-                    const value = parseInt(e.target.value);
-                    setAutoBetSettings({
-                      ...autoBetSettings,
-                      numberOfBets: isNaN(value) ? 0 : value,
-                    });
-                  }}
-                  placeholder="0"
-                  disabled={isAutoBetting}
-                  className="w-full bg-[#2a2627] border-none text-white h-10 pr-10 rounded-lg"
-                />
-                <button
-                  type="button"
-                  className="absolute right-2 top-1/2 transform -translate-y-1/2 text-white hover:text-[#6fc7ba]"
-                  onClick={() => {
-                    setAutoBetSettings({
-                      ...autoBetSettings,
-                      numberOfBets:
-                        autoBetSettings.numberOfBets === "infinity"
-                          ? 0
-                          : "infinity",
-                    });
-                  }}
-                  disabled={isAutoBetting}
-                >
-                  <Icon
-                    icon="ph:infinity-bold"
-                    className={`h-5 w-5 ${autoBetSettings.numberOfBets === "infinity" ? "text-[#6fc7ba]" : "text-white/70"}`}
+              <div className="flex items-center gap-1 font-Onest">
+                <div className="bg-[#2A2A2A] rounded-[20px] pl-4 relative flex items-center w-full">
+                  <input
+                    type="text"
+                    value={
+                      autoBetSettings.numberOfBets === "infinity"
+                        ? "0"
+                        : autoBetSettings.numberOfBets
+                    }
+                    onChange={(e) => {
+                      const value = parseInt(e.target.value);
+                      if (isNaN(value)) {
+                        toast.error("Please enter a valid number");
+                        return;
+                      }
+                      setAutoBetSettings({
+                        ...autoBetSettings,
+                        numberOfBets: value,
+                      });
+                    }}
+                    className="w-full text-white/80 pr-4 py-4 outline-none font-black text-3xl bg-transparent"
                   />
-                </button>
+                  <button
+                    type="button"
+                    className="absolute right-6 cursor-pointer top-1/2 transform -translate-y-1/2 text-white hover:text-[#6fc7ba]"
+                    onClick={() => {
+                      setAutoBetSettings({
+                        ...autoBetSettings,
+                        numberOfBets:
+                          autoBetSettings.numberOfBets === "infinity"
+                            ? 0
+                            : "infinity",
+                      });
+                    }}
+                    disabled={isAutoBetting}
+                  >
+                    <Icon
+                      icon="ph:infinity-bold"
+                      className={`h-5 w-5 ${autoBetSettings.numberOfBets === "infinity" ? "text-[#6fc7ba]" : "text-white/70"}`}
+                    />
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -271,11 +281,12 @@ const BetControls = memo(
 
         {gameMode === "Manual" && (
           <div>
-            <div className="flex justify-between mb-2">
-              <span className="text-sm text-white/70 font-black font-Onest">
-                PROFIT ON WIN
+            <div className="flex justify-between mb-2 font-black font-Onest">
+              <span className="text-sm text-white/70 ">PROFIT ON WIN</span>
+              <span className="text-sm text-white/70 flex items-center">
+                <Icon icon="mdi:approximately-equal" className="h-5 w-5" />
+                {"0.00"}
               </span>
-              <span className="text-sm text-white/70">${"0.00"}</span>
             </div>
             <div className="flex items-center gap-1 font-Onest">
               <div className="bg-[#2A2A2A] rounded-[20px] relative flex items-center w-full">
@@ -301,11 +312,11 @@ const BetControls = memo(
               : handleRoll
           }
           disabled={isRolling}
-          className={`w-full ${
+          className={`w-full font-Onest font-semibold rounded-3xl text-lg  ${
             gameMode === "Auto" && isAutoBetting
               ? "bg-red-500 hover:bg-red-600"
-              : "bg-[#6fc7ba] hover:bg-[#6fc7ba]/90"
-          } text-black font-bold py-6 h-12`}
+              : "bg-[#444] hover:bg-[#6fc7ba]/90"
+          } text-white/80 font-bold py-7`}
         >
           {isRolling ? (
             <div className="flex items-center gap-2">
@@ -319,7 +330,7 @@ const BetControls = memo(
               "Start Autobet"
             )
           ) : (
-            "Bet"
+            "Start the Game"
           )}
         </Button>
       </div>
@@ -809,9 +820,9 @@ export default function DieRollGame() {
 
   // Game stats UI
   const GameStats = () => (
-    <div className="grid grid-cols-3 gap-3 bg-[#2a2627] rounded-lg p-3">
+    <div className="grid grid-cols-3 gap-3 bg-[#2a2627] rounded-3xl py-4 px-6 font-bold font-Onest uppercase">
       <div className="space-y-1">
-        <div className="text-white/70 text-xs">Multiplier</div>
+        <div className="text-white/70 text-xs ">Multiplier</div>
         <div className="flex items-center">
           <span className="text-white text-lg font-semibold">
             {calculateMultiplier().toFixed(4)}
@@ -925,9 +936,6 @@ export default function DieRollGame() {
             >
               Auto
             </button>
-            <button className="w-8 h-8 flex items-center justify-center text-white">
-              <Icon icon="ph:link-simple" className="h-4 w-4" />
-            </button>
           </div>
 
           {/* Slider */}
@@ -994,7 +1002,7 @@ export default function DieRollGame() {
       </div>
 
       {/* Desktop View */}
-      <div className="hidden lg:flex h-full max-h-full">
+      <div className="hidden lg:flex h-full max-h-full font-Onest">
         <div className="w-1/3 bg-[#2a2627] p-4 flex flex-col overflow-auto">
           {/* Mode Toggle */}
           <div className="rounded-full bg-[#1a1718] p-1 flex border border-[#3a3637] mb-4">
@@ -1023,9 +1031,6 @@ export default function DieRollGame() {
               }}
             >
               Auto
-            </button>
-            <button className="w-8 h-8 flex items-center justify-center text-white">
-              <Icon icon="ph:link-simple" className="h-4 w-4" />
             </button>
           </div>
 
@@ -1090,11 +1095,9 @@ export default function DieRollGame() {
               >
                 {/* Slider Thumb */}
                 <div
-                  className="absolute top-1/2 -translate-y-1/2 bg-[#6fc7ba] w-8 h-8 flex items-center justify-center rounded cursor-pointer z-10 shadow-md"
+                  className="absolute top-1/2 -translate-y-1/2 bg-[#6fc7ba] w-8 h-8 flex items-center justify-center rounded-full cursor-pointer z-10 shadow-md"
                   style={{ left: `calc(${targetNumber}% - 16px)` }}
-                >
-                  <Icon icon="ph:list-bullets" className="text-white" />
-                </div>
+                ></div>
 
                 {/* Roll Result Indicator */}
                 {showRollAnimation && lastRollValue !== null && (
