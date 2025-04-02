@@ -74,6 +74,8 @@ export default function CoinflipGame() {
     if (gameState === "END") {
       sessionCleanup();
     }
+    // Clear the flip result when starting a new game
+    useCoinflipStore.getState().flipResult = null;
     setHasStarted(true);
     setGameEnded(false);
     setShowGameEndPopup(false);
@@ -83,11 +85,15 @@ export default function CoinflipGame() {
 
   const handleCreateBet = () => {
     if (!betAmount) return;
+    // Clear the flip result when creating a new bet
+    useCoinflipStore.getState().flipResult = null;
     createBet(clientSeed, betAmount);
   };
 
   const handleFlip = () => {
     if (!selectedSide) return;
+    // Clear the flip result before flipping
+    useCoinflipStore.getState().flipResult = null;
     setIsFlipping(true);
     flipSound.current.play();
     flipCoin(selectedSide);
@@ -107,6 +113,7 @@ export default function CoinflipGame() {
       setCurrentGif(null);
       setIsFlipping(false);
       // Clear the flip result by setting it to null in the store
+      useCoinflipStore.getState().flipResult = null;
       await sessionNext(option);
     }
     sessionNext(option);
@@ -116,6 +123,8 @@ export default function CoinflipGame() {
   useEffect(() => {
     if (flipResult && isFlipping) {
       console.log("Flip Result Received:", flipResult);
+      console.log("Selected Side:", selectedSide);
+      console.log("Do they match?", flipResult === selectedSide);
       setIsFlipping(true);
       setIsAnimating(true);
       const selectedGif = flipResult === "HEADS" ? headsGif : tailsGif;
@@ -124,7 +133,10 @@ export default function CoinflipGame() {
 
       // Play success sound if player won
       if (flipResult === selectedSide) {
+        console.log("Playing success sound - player won!");
         successSound.current.play();
+      } else {
+        console.log("Not playing success sound - player lost");
       }
 
       // Wait for GIF to complete one cycle (1 second)
