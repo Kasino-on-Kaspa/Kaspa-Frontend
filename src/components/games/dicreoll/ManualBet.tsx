@@ -1,5 +1,4 @@
 import { memo } from "react";
-import { Icon } from "@iconify/react";
 import Kaspa from "../../../assets/Kaspa.svg";
 import { formatKAS } from "@/lib/utils";
 

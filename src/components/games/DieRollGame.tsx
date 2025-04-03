@@ -483,6 +483,7 @@ export default function DieRollGame() {
 
   // Handle auto bet result and continue or stop based on settings
   const handleAutoBetResult = (isWin: boolean, profit: number) => {
+    console.log("handleAutoBetResult", isWin, profit);
     // Update bet count
     setAutoBetCount((prev) => prev + 1);
 

@@ -9,6 +9,7 @@ import Second from "@/assets/leaderboard/2.svg";
 import Third from "@/assets/leaderboard/3.svg";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import Blockies from "react-blockies";
+import { Switch } from "@/components/ui/switch";
 
 const formatKAS = (amount: bigint): string => {
   return (
@@ -69,6 +70,16 @@ export default function LeaderboardPage() {
         bets and biggest wins, where risk meets reward and fortunes are made.
       </p>
 
+      <div className="flex items-center justify-center gap-3 mb-6">
+        <span className="text-sm text-white/70 font-DM-Sans">Total Bets</span>
+        <Switch
+          checked={sortBy === "won"}
+          onCheckedChange={(checked) => setSortBy(checked ? "won" : "bet")}
+          className="data-[state=checked]:bg-[#6fc7ba]"
+        />
+        <span className="text-sm text-white/70 font-DM-Sans">Total Wins</span>
+      </div>
+
       {isLoading ? (
         <div className="flex items-center justify-center h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#6fc7ba]"></div>
@@ -95,7 +106,9 @@ export default function LeaderboardPage() {
                   {sortedLeaderboard?.[1]?.username}
                 </p>
                 <p className="text-sm md:text-base font-medium text-gray-400 font-DM-Sans">
-                  {formatKAS(sortedLeaderboard?.[1]?.totalBetAmount ?? 0n)}
+                  {sortBy === "bet"
+                    ? formatKAS(sortedLeaderboard?.[1]?.totalBetAmount ?? 0n)
+                    : formatKAS(sortedLeaderboard?.[1]?.totalWonAmount ?? 0n)}
                 </p>
                 <p className="text-[10px] md:text-xs text-gray-400 font-DM-Sans font-extralight">
                   {formatAddress(sortedLeaderboard?.[1]?.address || "")}
@@ -122,7 +135,9 @@ export default function LeaderboardPage() {
                   {sortedLeaderboard?.[0]?.username}
                 </p>
                 <p className="text-sm md:text-base font-medium text-gray-400 font-DM-Sans">
-                  {formatKAS(sortedLeaderboard?.[0]?.totalBetAmount ?? 0n)}
+                  {sortBy === "bet"
+                    ? formatKAS(sortedLeaderboard?.[0]?.totalBetAmount ?? 0n)
+                    : formatKAS(sortedLeaderboard?.[0]?.totalWonAmount ?? 0n)}
                 </p>
                 <p className="text-[10px] md:text-xs text-gray-400 font-DM-Sans font-extralight">
                   {formatAddress(sortedLeaderboard?.[0]?.address || "")}
@@ -149,7 +164,9 @@ export default function LeaderboardPage() {
                   {sortedLeaderboard?.[2]?.username}
                 </p>
                 <p className="text-sm md:text-base font-medium text-gray-400 font-DM-Sans">
-                  {formatKAS(sortedLeaderboard?.[2]?.totalBetAmount ?? 0n)}
+                  {sortBy === "bet"
+                    ? formatKAS(sortedLeaderboard?.[2]?.totalBetAmount ?? 0n)
+                    : formatKAS(sortedLeaderboard?.[2]?.totalWonAmount ?? 0n)}
                 </p>
                 <p className="text-[10px] md:text-xs text-gray-400 font-DM-Sans font-extralight">
                   {formatAddress(sortedLeaderboard?.[2]?.address || "")}

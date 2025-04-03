@@ -37,7 +37,7 @@ export default function CoinflipGame() {
   const [clientSeed, setClientSeed] = useState<string>("");
   const [isFlipping, setIsFlipping] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
-  const [gameEnded, setGameEnded] = useState(false);
+
   const [showResult, setShowResult] = useState(false);
   const [currentGif, setCurrentGif] = useState<string | null>(null);
   const [isAnimating, setIsAnimating] = useState(false);
@@ -77,7 +77,7 @@ export default function CoinflipGame() {
     // Clear the flip result when starting a new game
     useCoinflipStore.getState().flipResult = null;
     setHasStarted(true);
-    setGameEnded(false);
+
     setShowGameEndPopup(false);
     initializeGame();
     setClientSeed(Math.random().toString(36).substring(2, 15));
@@ -101,7 +101,6 @@ export default function CoinflipGame() {
 
   const handleNext = async (option: "CASHOUT" | "CONTINUE") => {
     if (option === "CASHOUT") {
-      setGameEnded(true);
       setShowGameEndPopup(true);
       setBetAmount("10");
       setClientSeed(Math.random().toString(36).substring(2, 15));
@@ -153,7 +152,6 @@ export default function CoinflipGame() {
           setIsAnimating(false);
           // If player lost, end the game
           if (flipResult !== selectedSide) {
-            setGameEnded(true);
             setShowGameEndPopup(true);
           }
         }, 800); // Increased from 200ms to 800ms to show result longer
