@@ -1,9 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
 import { LeaderboardEntry } from "@/types/leaderboard";
-import { cn } from "@/lib/utils";
+import { cn, formatAddress } from "@/lib/utils";
+import First from "@/assets/leaderboard/1.svg";
+import Second from "@/assets/leaderboard/2.svg";
+import Third from "@/assets/leaderboard/3.svg";
+import { Icon } from "@iconify/react/dist/iconify.js";
+import Blockies from "react-blockies";
 
 const formatKAS = (amount: bigint): string => {
   return (
@@ -14,8 +19,25 @@ const formatKAS = (amount: bigint): string => {
   );
 };
 
+const useMediaQuery = (query: string) => {
+  const [matches, setMatches] = useState(false);
+
+  useEffect(() => {
+    const media = window.matchMedia(query);
+    if (media.matches !== matches) {
+      setMatches(media.matches);
+    }
+    const listener = () => setMatches(media.matches);
+    media.addEventListener("change", listener);
+    return () => media.removeEventListener("change", listener);
+  }, [matches, query]);
+
+  return matches;
+};
+
 export default function LeaderboardPage() {
   const [sortBy, setSortBy] = useState<"bet" | "won">("bet");
+  const isDesktop = useMediaQuery("(min-width: 768px)");
 
   const { data: leaderboard, isLoading } = useQuery({
     queryKey: ["leaderboard"],
@@ -23,6 +45,7 @@ export default function LeaderboardPage() {
       const { data } = await axios.get<LeaderboardEntry[]>(
         "http://localhost:3000/leaderboard",
       );
+      console.log(data);
       return data;
     },
     refetchInterval: 30000, // Refresh every 30 seconds
@@ -38,101 +61,185 @@ export default function LeaderboardPage() {
 
   return (
     <div className="container max-w-4xl mx-auto px-4 py-8">
-      <h1 className="text-4xl font-bold text-center mb-2 text-[#6fc7ba]">
+      <h1 className="text-4xl md:text-5xl font-bold font-Onest tracking-tight text-center mb-2 text-[#6fc7ba]">
         Leaderboard
       </h1>
-      <p className="text-center text-gray-400 mb-8">
-        Top players ranked by bets and wins
+      <p className="text-center text-gray-400 mb-8 font-DM-Sans font-extralight text-sm md:text-base px-4">
+        A dynamic showcase of the casino's top players, ranked by the highest
+        bets and biggest wins, where risk meets reward and fortunes are made.
       </p>
-
-      <div className="flex justify-center mb-8">
-        <div className="flex bg-[#2A2A2A] rounded-xl p-1.5">
-          <button
-            onClick={() => setSortBy("bet")}
-            className={cn(
-              "px-6 py-2.5 rounded-lg transition-all font-medium",
-              sortBy === "bet"
-                ? "bg-[#6fc7ba] text-[#231f20]"
-                : "text-gray-400 hover:text-[#6fc7ba] hover:bg-white/5",
-            )}
-          >
-            Total Bets
-          </button>
-          <button
-            onClick={() => setSortBy("won")}
-            className={cn(
-              "px-6 py-2.5 rounded-lg transition-all font-medium",
-              sortBy === "won"
-                ? "bg-[#6fc7ba] text-[#231f20]"
-                : "text-gray-400 hover:text-[#6fc7ba] hover:bg-white/5",
-            )}
-          >
-            Total Wins
-          </button>
-        </div>
-      </div>
 
       {isLoading ? (
         <div className="flex items-center justify-center h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#6fc7ba]"></div>
         </div>
       ) : (
-        <div className="space-y-3">
-          <AnimatePresence>
-            {sortedLeaderboard?.map((entry, index) => (
-              <motion.div
-                key={entry.address}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.2, delay: index * 0.05 }}
-                className={cn(
-                  "bg-[#2A2A2A] rounded-xl p-4 flex items-center justify-between border border-transparent transition-all hover:border-[#6fc7ba]/20",
-                  index === 0 &&
-                    "bg-gradient-to-r from-[#2A2A2A] to-[#6fc7ba]/10",
-                )}
-              >
-                <div className="flex items-center gap-4">
-                  <div
-                    className={cn(
-                      "w-10 h-10 rounded-lg flex items-center justify-center text-xl font-bold",
-                      index === 0
-                        ? "bg-[#6fc7ba] text-[#231f20]"
-                        : "bg-white/10 text-[#6fc7ba]",
-                    )}
-                  >
-                    #
-                    {sortBy === "bet"
-                      ? entry.betAmountRank
-                      : entry.wonAmountRank}
+        <div>
+          <div className="flex justify-center gap-3 md:gap-5 items-center">
+            <div className="flex flex-col gap-2 items-center">
+              <div className="w-[80px] h-[80px] md:w-[100px] md:h-[100px] bg-white/10 rounded-full relative">
+                <Blockies
+                  seed={sortedLeaderboard?.[1]?.address || ""}
+                  size={8}
+                  scale={isDesktop ? 12.5 : 10}
+                  className="w-full h-full rounded-full"
+                />
+                <div className="absolute -top-1 -left-1 w-[30px] h-[30px] md:w-[40px] md:h-[40px] border-2 border-white bg-[#C4C4C4] rounded-full flex items-center justify-center">
+                  <p className="font-black text-base md:text-lg uppercase text-white font-Onest">
+                    2
+                  </p>
+                </div>
+              </div>
+              <div className="mt-1 md:mt-2 space-y-0.5 md:space-y-1 text-center">
+                <p className="text-[10px] md:text-xs font-bold uppercase text-gray-400 font-DM-Sans">
+                  {sortedLeaderboard?.[1]?.username}
+                </p>
+                <p className="text-sm md:text-base font-medium text-gray-400 font-DM-Sans">
+                  {formatKAS(sortedLeaderboard?.[1]?.totalBetAmount ?? 0n)}
+                </p>
+                <p className="text-[10px] md:text-xs text-gray-400 font-DM-Sans font-extralight">
+                  {formatAddress(sortedLeaderboard?.[1]?.address || "")}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2 mb-8 md:mb-12 items-center">
+              <div className="w-[100px] h-[100px] md:w-[120px] md:h-[120px] bg-white/10 rounded-full relative">
+                <Blockies
+                  seed={sortedLeaderboard?.[0]?.address || ""}
+                  size={8}
+                  scale={isDesktop ? 15 : 12.5}
+                  className="w-full h-full rounded-full"
+                />
+                <div className="absolute -top-1 -left-1 w-[30px] h-[30px] md:w-[40px] md:h-[40px] border-2 border-white bg-[#EFBF04] rounded-full flex items-center justify-center">
+                  <p className="font-black text-base md:text-lg uppercase text-white font-Onest">
+                    1
+                  </p>
+                </div>
+              </div>
+              <div className="mt-1 md:mt-2 space-y-0.5 md:space-y-1 text-center">
+                <p className="text-[10px] md:text-xs font-bold uppercase text-gray-400 font-DM-Sans">
+                  {sortedLeaderboard?.[0]?.username}
+                </p>
+                <p className="text-sm md:text-base font-medium text-gray-400 font-DM-Sans">
+                  {formatKAS(sortedLeaderboard?.[0]?.totalBetAmount ?? 0n)}
+                </p>
+                <p className="text-[10px] md:text-xs text-gray-400 font-DM-Sans font-extralight">
+                  {formatAddress(sortedLeaderboard?.[0]?.address || "")}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2 items-center">
+              <div className="w-[80px] h-[80px] md:w-[100px] md:h-[100px] bg-white/10 rounded-full relative">
+                <Blockies
+                  seed={sortedLeaderboard?.[2]?.address || ""}
+                  size={8}
+                  scale={isDesktop ? 12.5 : 10}
+                  className="w-full h-full rounded-full"
+                />
+                <div className="absolute -top-1 -left-1 w-[30px] h-[30px] md:w-[40px] md:h-[40px] border-2 border-white bg-[#CE8946] rounded-full flex items-center justify-center">
+                  <p className="font-black text-base md:text-lg uppercase text-white font-Onest">
+                    3
+                  </p>
+                </div>
+              </div>
+              <div className="mt-1 md:mt-2 space-y-0.5 md:space-y-1 text-center">
+                <p className="text-[10px] md:text-xs font-bold uppercase text-gray-400 font-DM-Sans">
+                  {sortedLeaderboard?.[2]?.username}
+                </p>
+                <p className="text-sm md:text-base font-medium text-gray-400 font-DM-Sans">
+                  {formatKAS(sortedLeaderboard?.[2]?.totalBetAmount ?? 0n)}
+                </p>
+                <p className="text-[10px] md:text-xs text-gray-400 font-DM-Sans font-extralight">
+                  {formatAddress(sortedLeaderboard?.[2]?.address || "")}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-center -space-x-8 md:-space-x-12 relative -mt-4 md:mt-0">
+            <img
+              src={Second}
+              alt="Second"
+              className="w-[100px] md:w-[150px] top-0 -rotate-12 -left-18"
+            />
+            <img
+              src={First}
+              alt="First"
+              className="w-[100px] md:w-[150px] z-[10] mb-8 md:mb-12"
+            />
+            <img
+              src={Third}
+              alt="Third"
+              className="w-[100px] md:w-[150px] top-0 rotate-12 left-18"
+            />
+          </div>
+
+          <div className="space-y-1 bg-[#444] p-1 -mt-20 md:-mt-30 rounded-3xl relative z-20">
+            <AnimatePresence>
+              {sortedLeaderboard?.map((entry, index) => (
+                <motion.div
+                  key={entry.address}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.2, delay: index * 0.05 }}
+                  className={cn(
+                    "bg-[#2A2A2A] rounded-3xl p-3 md:p-4 flex items-center justify-between border border-transparent transition-all hover:border-[#6fc7ba]/20",
+                  )}
+                >
+                  <div className="flex items-center gap-2 md:gap-4">
+                    <div className="relative">
+                      <div
+                        className={cn(
+                          "w-8 h-8 md:w-10 md:h-10 rounded-lg overflow-hidden",
+                          index === 0 ? "bg-[#6fc7ba]" : "bg-white/10",
+                        )}
+                      >
+                        <Blockies
+                          seed={entry.address || ""}
+                          size={8}
+                          scale={isDesktop ? 5 : 4}
+                          className="w-full h-full rounded-lg"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-base md:text-lg text-white flex items-center gap-2">
+                        {entry.username}
+                        {index === 0 && (
+                          <span className="text-[10px] md:text-sm text-[#6fc7ba]">
+                            👑 Leader
+                          </span>
+                        )}
+                      </h3>
+                      <p className="text-xs md:text-sm flex items-center gap-1 md:gap-2 text-gray-400 w-fit sm:w-auto font-DM-Sans">
+                        {formatAddress(entry.address || "")}
+                        <Icon
+                          onClick={() => {
+                            navigator.clipboard.writeText(entry.address || "");
+                          }}
+                          icon="material-symbols:content-copy-sharp"
+                          className="w-3 h-3 cursor-pointer"
+                        />
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="font-semibold text-lg text-white">
-                      {entry.username}
-                      {index === 0 && (
-                        <span className="ml-2 text-[#6fc7ba] text-sm">
-                          👑 Leader
-                        </span>
-                      )}
-                    </h3>
-                    <p className="text-sm text-gray-400 truncate w-32 sm:w-auto font-mono">
-                      {entry.address}
+                  <div className="text-right">
+                    <p className="text-sm md:text-base font-medium text-[#6fc7ba]">
+                      {sortBy === "bet"
+                        ? formatKAS(entry.totalBetAmount)
+                        : formatKAS(entry.totalWonAmount)}
+                    </p>
+                    <p className="text-xs md:text-sm text-gray-400">
+                      {sortBy === "bet" ? "Total Bets" : "Total Wins"}
                     </p>
                   </div>
-                </div>
-                <div className="text-right">
-                  <p className="font-medium text-[#6fc7ba]">
-                    {sortBy === "bet"
-                      ? formatKAS(entry.totalBetAmount)
-                      : formatKAS(entry.totalWonAmount)}
-                  </p>
-                  <p className="text-sm text-gray-400">
-                    {sortBy === "bet" ? "Total Bets" : "Total Wins"}
-                  </p>
-                </div>
-              </motion.div>
-            ))}
-          </AnimatePresence>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </div>
         </div>
       )}
     </div>
