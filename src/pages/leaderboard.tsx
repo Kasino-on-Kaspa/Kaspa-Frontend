@@ -4,6 +4,9 @@ import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
 import { LeaderboardEntry } from "@/types/leaderboard";
 import { cn } from "@/lib/utils";
+import First from "@/assets/leaderboard/1.svg";
+import Second from "@/assets/leaderboard/2.svg";
+import Third from "@/assets/leaderboard/3.svg";
 
 const formatKAS = (amount: bigint): string => {
   return (
@@ -36,14 +39,39 @@ export default function LeaderboardPage() {
 
   return (
     <div className="container max-w-4xl mx-auto px-4 py-8">
-      <h1 className="text-4xl font-bold text-center mb-2 text-[#6fc7ba]">
+      <h1 className="text-4xl font-bold font-Onest tracking-tight text-center mb-2 text-[#6fc7ba]">
         Leaderboard
       </h1>
-      <p className="text-center text-gray-400 mb-8">
-        Top players ranked by bets and wins
+      <p className="text-center text-gray-400 mb-8 font-Onest font-extralight">
+        A dynamic showcase of the casino’s top players, ranked by the highest
+        bets and biggest wins, where risk meets reward and fortunes are made.
       </p>
 
-      <div className="flex justify-center mb-8">
+      {isLoading ? (
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#6fc7ba]"></div>
+        </div>
+      ) : (
+        <div>
+          <div className="mt-20">
+            <div className="flex justify-center -space-x-12">
+              <img
+                src={Second}
+                alt="Second"
+                className="w-[150px] top-0 -rotate-12 -left-18"
+              />
+              <img src={First} alt="First" className="w-[150px] z-[10] mb-12" />
+              <img
+                src={Third}
+                alt="Third"
+                className="w-[150px]  top-0 rotate-12 left-18"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* <div className="flex justify-center mb-8">
         <div className="flex bg-[#2A2A2A] rounded-xl p-1.5">
           <button
             onClick={() => setSortBy("bet")}
@@ -51,7 +79,7 @@ export default function LeaderboardPage() {
               "px-6 py-2.5 rounded-lg transition-all font-medium",
               sortBy === "bet"
                 ? "bg-[#6fc7ba] text-[#231f20]"
-                : "text-gray-400 hover:text-[#6fc7ba] hover:bg-white/5",
+                : "text-gray-400 hover:text-[#6fc7ba] hover:bg-white/5"
             )}
           >
             Total Bets
@@ -62,7 +90,7 @@ export default function LeaderboardPage() {
               "px-6 py-2.5 rounded-lg transition-all font-medium",
               sortBy === "won"
                 ? "bg-[#6fc7ba] text-[#231f20]"
-                : "text-gray-400 hover:text-[#6fc7ba] hover:bg-white/5",
+                : "text-gray-400 hover:text-[#6fc7ba] hover:bg-white/5"
             )}
           >
             Total Wins
@@ -87,7 +115,7 @@ export default function LeaderboardPage() {
                 className={cn(
                   "bg-[#2A2A2A] rounded-xl p-4 flex items-center justify-between border border-transparent transition-all hover:border-[#6fc7ba]/20",
                   index === 0 &&
-                    "bg-gradient-to-r from-[#2A2A2A] to-[#6fc7ba]/10",
+                    "bg-gradient-to-r from-[#2A2A2A] to-[#6fc7ba]/10"
                 )}
               >
                 <div className="flex items-center gap-4">
@@ -96,7 +124,7 @@ export default function LeaderboardPage() {
                       "w-10 h-10 rounded-lg flex items-center justify-center text-xl font-bold",
                       index === 0
                         ? "bg-[#6fc7ba] text-[#231f20]"
-                        : "bg-white/10 text-[#6fc7ba]",
+                        : "bg-white/10 text-[#6fc7ba]"
                     )}
                   >
                     #
@@ -132,7 +160,7 @@ export default function LeaderboardPage() {
             ))}
           </AnimatePresence>
         </div>
-      )}
+      )} */}
     </div>
   );
 }
