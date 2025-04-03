@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@iconify/react";
-import { useWalletBalance } from "@/lib/walletQueries";
+
 import { toast } from "sonner";
 import useDicerollStore from "@/store/dicerollStore";
 import useWalletStore from "@/store/walletStore";
@@ -482,12 +482,6 @@ export default function DieRollGame() {
       ? (100 - targetNumber).toFixed(4)
       : targetNumber.toFixed(4);
   };
-
-  const formatBalance = (value?: number | null) => {
-    if (value === undefined || value === null) return "0.00000000";
-    return value.toFixed(8);
-  };
-
   // Calculate estimated profit on win
   const calculateProfit = () => {
     if (!betAmount || parseFloat(betAmount) <= 0) return "0.00000000";

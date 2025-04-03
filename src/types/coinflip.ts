@@ -27,6 +27,8 @@ export type TCoinflipSessionJSON = {
 
 export interface CoinflipStore {
   isConnected: boolean;
+  setSelectedSide: (side: TCoinflipSessionClientGameData) => void;
+  selectedSide: TCoinflipSessionClientGameData | null;
   flipResult: TCoinflipSessionGameResult | null;
   gameState: string | null;
   sessionData: TCoinflipSessionJSON | null;
