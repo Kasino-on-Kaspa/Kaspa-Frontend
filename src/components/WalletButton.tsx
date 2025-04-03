@@ -44,6 +44,12 @@ export default function WalletButton() {
   const [isDepositing, setIsDepositing] = useState(false);
   const [isWithdrawing, setIsWithdrawing] = useState(false);
 
+  useEffect(() => {
+    if (isAuthenticated) {
+      connect();
+    }
+  }, [isAuthenticated, connect]);
+
   const handleConnect = async () => {
     if (!wallet) {
       toast.error("No wallet available");

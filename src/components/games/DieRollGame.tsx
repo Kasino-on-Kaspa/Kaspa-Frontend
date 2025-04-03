@@ -1,39 +1,20 @@
-import { useState, useEffect, useRef } from "react";
-import { Input } from "@/components/ui/input";
+import { useState, useEffect, useRef, useCallback, memo } from "react";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@iconify/react";
-
+import Kaspa from "../../assets/Kaspa.svg";
 import { toast } from "sonner";
 import useDicerollStore from "@/store/dicerollStore";
 import useWalletStore from "@/store/walletStore";
 import { useNavigate } from "@tanstack/react-router";
-import { DieRollBetType } from "@/types/dieroll";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import sha256 from "crypto-js/sha256";
-import Hex from "crypto-js/enc-hex";
+import { DieRollBetType, RollHistory } from "@/types/dieroll";
 import { kasToSompi } from "@/lib/utils";
+import ProvablyFair from "./ProvablyFair";
+import BetDetailsModal from "./BetDetailsModal";
+import ManualBet from "./dicreoll/ManualBet";
 
 interface RollResult {
   roll: number;
   serverSeed: string;
-}
-
-interface RollHistory {
-  roll: number;
-  multiplier: number;
-  profit: number;
-  timestamp: number;
-  clientSeed: string;
-  serverSeed?: string;
-  serverSeedHash: string;
-  target: number;
-  condition: "OVER" | "UNDER";
 }
 
 interface AutoBetSettings {
@@ -50,12 +31,320 @@ interface AutoBetSettings {
   stopOnLoss: string;
 }
 
+// Move BetControls outside the main component
+const BetControls = memo(
+  ({
+    onSiteBalance,
+    betAmount,
+    setBetAmount,
+    gameMode,
+    isAutoBetting,
+    isRolling,
+    autoBetSettings,
+    setAutoBetSettings,
+    startAutoBet,
+    stopAutoBet,
+    handleRoll,
+    calculateProfit,
+  }: {
+    onSiteBalance: {
+      balance?: string;
+      address?: string;
+    } | null;
+    betAmount: string;
+    setBetAmount: (value: string) => void;
+    gameMode: "Manual" | "Auto";
+    isAutoBetting: boolean;
+    isRolling: boolean;
+    autoBetSettings: AutoBetSettings;
+    setAutoBetSettings: (value: AutoBetSettings) => void;
+    startAutoBet: () => void;
+    stopAutoBet: () => void;
+    handleRoll: () => void;
+    calculateProfit: () => string;
+  }) => {
+    return (
+      <div className="space-y-3">
+        <p className="text-sm text-white/70 font-Onest uppercase font-bold flex items-center gap-2">
+          <Icon icon="mdi:cash-multiple" className="h-5 w-5" />
+          BET AMOUNT
+        </p>
+        <ManualBet
+          onSiteBalance={onSiteBalance}
+          betAmount={betAmount}
+          setBetAmount={setBetAmount}
+        />
+
+        {gameMode === "Auto" && (
+          <>
+            {/* Number of Bets */}
+            <div>
+              <div className="flex justify-between mb-2">
+                <span className="text-sm text-white/70 font-Onest uppercase font-bold">
+                  Number of Bets
+                </span>
+              </div>
+              <div className="flex items-center gap-1 font-Onest">
+                <div className="bg-[#2A2A2A] rounded-[20px] pl-4 relative flex items-center w-full">
+                  <input
+                    type="text"
+                    value={
+                      autoBetSettings.numberOfBets === "infinity"
+                        ? "0"
+                        : autoBetSettings.numberOfBets
+                    }
+                    onChange={(e) => {
+                      const value = parseInt(e.target.value);
+                      if (isNaN(value)) {
+                        toast.error("Please enter a valid number");
+                        return;
+                      }
+                      setAutoBetSettings({
+                        ...autoBetSettings,
+                        numberOfBets: value,
+                      });
+                    }}
+                    className="w-full text-white/80 pr-4 py-4 outline-none font-black text-3xl bg-transparent"
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-6 cursor-pointer top-1/2 transform -translate-y-1/2 text-white hover:text-[#6fc7ba]"
+                    onClick={() => {
+                      setAutoBetSettings({
+                        ...autoBetSettings,
+                        numberOfBets:
+                          autoBetSettings.numberOfBets === "infinity"
+                            ? 0
+                            : "infinity",
+                      });
+                    }}
+                    disabled={isAutoBetting}
+                  >
+                    <Icon
+                      icon="ph:infinity-bold"
+                      className={`h-5 w-5 ${autoBetSettings.numberOfBets === "infinity" ? "text-[#6fc7ba]" : "text-white/70"}`}
+                    />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* On Win */}
+            <div>
+              <div className="flex justify-between mb-2">
+                <span className="text-sm text-white/70">On Win</span>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  className={`py-1 px-3 text-xs h-10 ${autoBetSettings.onWin.action === "reset" ? "bg-[#3a3637] text-white" : "bg-[#2a2627] text-white/70"} border-[#2a2627] rounded`}
+                  onClick={() => {
+                    setAutoBetSettings({
+                      ...autoBetSettings,
+                      onWin: { ...autoBetSettings.onWin, action: "reset" },
+                    });
+                  }}
+                  disabled={isAutoBetting}
+                >
+                  Reset
+                </button>
+                <div className="flex-1 flex items-center gap-1 h-10 px-2 bg-[#2a2627] rounded">
+                  <span className="text-xs text-white/70">Increase by:</span>
+                  <input
+                    type="number"
+                    value={autoBetSettings.onWin.percentage}
+                    onChange={(e) => {
+                      const value = parseInt(e.target.value);
+                      setAutoBetSettings({
+                        ...autoBetSettings,
+                        onWin: {
+                          action: "increase",
+                          percentage: isNaN(value) ? 0 : value,
+                        },
+                      });
+                    }}
+                    className="h-7 bg-[#2a2627] border-none text-white text-xs w-12"
+                    disabled={
+                      isAutoBetting ||
+                      autoBetSettings.onWin.action !== "increase"
+                    }
+                  />
+                  <span className="text-xs text-white/70">%</span>
+                </div>
+              </div>
+            </div>
+
+            {/* On Loss */}
+            <div>
+              <div className="flex justify-between mb-2">
+                <span className="text-sm text-white/70">On Loss</span>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  className={`py-1 px-3 text-xs h-10 ${autoBetSettings.onLoss.action === "reset" ? "bg-[#3a3637] text-white" : "bg-[#2a2627] text-white/70"} border-[#2a2627] rounded`}
+                  onClick={() => {
+                    setAutoBetSettings({
+                      ...autoBetSettings,
+                      onLoss: { ...autoBetSettings.onLoss, action: "reset" },
+                    });
+                  }}
+                  disabled={isAutoBetting}
+                >
+                  Reset
+                </button>
+                <div className="flex-1 flex items-center gap-1 h-10 px-2 bg-[#2a2627] rounded">
+                  <span className="text-xs text-white/70">Increase by:</span>
+                  <input
+                    type="number"
+                    value={autoBetSettings.onLoss.percentage}
+                    onChange={(e) => {
+                      const value = parseInt(e.target.value);
+                      setAutoBetSettings({
+                        ...autoBetSettings,
+                        onLoss: {
+                          action: "increase",
+                          percentage: isNaN(value) ? 0 : value,
+                        },
+                      });
+                    }}
+                    className="h-7 bg-[#2a2627] border-none text-white text-xs w-12"
+                    disabled={
+                      isAutoBetting ||
+                      autoBetSettings.onLoss.action !== "increase"
+                    }
+                  />
+                  <span className="text-xs text-white/70">%</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Stop on Profit */}
+            <div>
+              <div className="flex justify-between mb-2">
+                <span className="text-sm text-white/70">Stop on Profit</span>
+                <span className="text-sm text-white/70">${"0.00"}</span>
+              </div>
+              <div className="relative">
+                <input
+                  type="number"
+                  value={autoBetSettings.stopOnProfit}
+                  onChange={(e) => {
+                    setAutoBetSettings({
+                      ...autoBetSettings,
+                      stopOnProfit: e.target.value,
+                    });
+                  }}
+                  placeholder="0.00000000"
+                  disabled={isAutoBetting}
+                  className="w-full bg-[#2a2627] border-none text-white h-10 pr-8 rounded-lg"
+                />
+                <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                  <Icon
+                    icon="ph:currency-circle-dollar"
+                    className="text-[#6fc7ba] h-5 w-5"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Stop on Loss */}
+            <div>
+              <div className="flex justify-between mb-2">
+                <span className="text-sm text-white/70">Stop on Loss</span>
+                <span className="text-sm text-white/70">${"0.00"}</span>
+              </div>
+              <div className="relative">
+                <input
+                  type="number"
+                  value={autoBetSettings.stopOnLoss}
+                  onChange={(e) => {
+                    setAutoBetSettings({
+                      ...autoBetSettings,
+                      stopOnLoss: e.target.value,
+                    });
+                  }}
+                  placeholder="0.00000000"
+                  disabled={isAutoBetting}
+                  className="w-full bg-[#2a2627] border-none text-white h-10 pr-8 rounded-lg"
+                />
+                <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                  <Icon
+                    icon="ph:currency-circle-dollar"
+                    className="text-[#6fc7ba] h-5 w-5"
+                  />
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+
+        {gameMode === "Manual" && (
+          <div>
+            <div className="flex justify-between mb-2 font-black font-Onest">
+              <span className="text-sm text-white/70 ">PROFIT ON WIN</span>
+              <span className="text-sm text-white/70 flex items-center">
+                <Icon icon="mdi:approximately-equal" className="h-5 w-5" />
+                {"0.00"}
+              </span>
+            </div>
+            <div className="flex items-center gap-1 font-Onest">
+              <div className="bg-[#2A2A2A] rounded-[20px] relative flex items-center w-full">
+                <img src={Kaspa} alt="Kaspa" className="w-[55px]" />
+                <input
+                  type="text"
+                  value={calculateProfit()}
+                  readOnly
+                  className="w-full text-white/80 pr-4 py-4 outline-none font-black text-3xl bg-transparent"
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Button */}
+        <Button
+          onClick={
+            gameMode === "Auto"
+              ? isAutoBetting
+                ? stopAutoBet
+                : startAutoBet
+              : handleRoll
+          }
+          disabled={isRolling}
+          className={`w-full font-Onest font-semibold rounded-3xl text-lg  ${
+            gameMode === "Auto" && isAutoBetting
+              ? "bg-red-500 hover:bg-red-600"
+              : "bg-[#444] hover:bg-[#6fc7ba]/90"
+          } text-white/80 font-bold py-7`}
+        >
+          {isRolling ? (
+            <div className="flex items-center gap-2">
+              <Icon icon="mdi:loading" className="h-4 w-4 animate-spin" />
+              Rolling...
+            </div>
+          ) : gameMode === "Auto" ? (
+            isAutoBetting ? (
+              "Stop Autobet"
+            ) : (
+              "Start Autobet"
+            )
+          ) : (
+            "Start the Game"
+          )}
+        </Button>
+      </div>
+    );
+  },
+);
+
 export default function DieRollGame() {
   const navigate = useNavigate();
-  const { isAuthenticated } = useWalletStore();
+  const { isAuthenticated, onSiteBalance } = useWalletStore();
   const {
     isConnected,
     rollResult,
+    sessionData,
     gameSessionError,
     serverSeedHash,
     serverSeed,
@@ -64,7 +353,6 @@ export default function DieRollGame() {
     startSession,
   } = useDicerollStore();
 
-  const [betAmount, setBetAmount] = useState<string>("");
   const [targetNumber, setTargetNumber] = useState<number>(50);
   const [condition, setCondition] = useState<"OVER" | "UNDER">("OVER");
   const [isRolling, setIsRolling] = useState(false);
@@ -75,6 +363,7 @@ export default function DieRollGame() {
   const MAX_RETRIES = 3;
   const [clientSeed, setClientSeed] = useState<string>("1234567890");
   const [gameMode, setGameMode] = useState<"Manual" | "Auto">("Manual");
+  const [betAmount, setBetAmount] = useState<string>("10");
 
   // Auto bet state
   const [autoBetSettings, setAutoBetSettings] = useState<AutoBetSettings>({
@@ -123,13 +412,11 @@ export default function DieRollGame() {
 
     // Extract roll number and server seed from result
     let roll: number;
-    let currentServerSeed: string | undefined;
     console.log("rollResult", rollResult);
 
     if (typeof rollResult === "object" && "serverSeed" in rollResult) {
       // Handle case where rollResult is an object with serverSeed
       roll = (rollResult as RollResult).roll;
-      currentServerSeed = serverSeed as string;
     } else if (typeof rollResult === "number") {
       // Handle case where rollResult is a direct number
       roll = rollResult;
@@ -368,7 +655,7 @@ export default function DieRollGame() {
 
     try {
       // Start a new session before placing the bet
-      await startSession();
+      startSession();
 
       const betData = DieRollBetType.parse({
         client_seed: clientSeed,
@@ -398,25 +685,28 @@ export default function DieRollGame() {
   };
 
   // Update the handleSliderPosition function to play sound when slider moves
-  const handleSliderPosition = (e: MouseEvent) => {
-    if (!sliderRef.current) return;
+  const handleSliderPosition = useCallback(
+    (e: MouseEvent) => {
+      if (!sliderRef.current) return;
 
-    const rect = sliderRef.current.getBoundingClientRect();
-    let percentage = ((e.clientX - rect.left) / rect.width) * 100;
+      const rect = sliderRef.current.getBoundingClientRect();
+      let percentage = ((e.clientX - rect.left) / rect.width) * 100;
 
-    // Clamp between 1 and 98
-    percentage = Math.max(1, Math.min(98, percentage));
+      // Clamp between 1 and 98
+      percentage = Math.max(1, Math.min(98, percentage));
 
-    const newValue = Math.round(percentage);
+      const newValue = Math.round(percentage);
 
-    // Only play sound and update if the value actually changed
-    if (newValue !== targetNumber) {
-      setTargetNumber(newValue);
-    }
-    if (newValue % 4 == 1 && newValue !== targetNumber) {
-      playClickSound();
-    }
-  };
+      // Only play sound and update if the value actually changed
+      if (newValue !== targetNumber) {
+        setTargetNumber(newValue);
+      }
+      if (newValue % 4 == 1 && newValue !== targetNumber) {
+        playClickSound();
+      }
+    },
+    [targetNumber],
+  );
 
   // Handle slider drag
   useEffect(() => {
@@ -446,7 +736,7 @@ export default function DieRollGame() {
       document.removeEventListener("mousemove", handleMouseMove);
       document.removeEventListener("mouseup", handleMouseUp);
     };
-  }, []);
+  }, [handleSliderPosition]);
 
   const calculateMultiplier = (
     inputCondition: "OVER" | "UNDER" = condition,
@@ -482,6 +772,7 @@ export default function DieRollGame() {
       ? (100 - targetNumber).toFixed(4)
       : targetNumber.toFixed(4);
   };
+
   // Calculate estimated profit on win
   const calculateProfit = () => {
     if (!betAmount || parseFloat(betAmount) <= 0) return "0.00000000";
@@ -527,381 +818,11 @@ export default function DieRollGame() {
     );
   }
 
-  const ProvablyFairModal = () => (
-    <Dialog>
-      <DialogTrigger asChild>
-        <Button
-          variant="ghost"
-          className="text-[#6fc7ba] hover:bg-[#6fc7ba]/10"
-        >
-          <Icon icon="ph:shield-check-fill" className="mr-2 h-4 w-4" />
-          Provably Fair
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="bg-[#1a1718] border-[#6fc7ba]/20 text-white">
-        <DialogHeader>
-          <DialogTitle className="text-[#6fc7ba]">
-            Provably Fair System
-          </DialogTitle>
-        </DialogHeader>
-        <div className="space-y-4">
-          <div>
-            <h3 className="text-sm font-medium text-white/70 mb-1">
-              Client Seed
-            </h3>
-            <div className="flex gap-2">
-              <Input
-                value={clientSeed}
-                onChange={(e) => setClientSeed(e.target.value)}
-                className="bg-[#2a2627] border-none text-white"
-              />
-              <Button
-                variant="outline"
-                className="border-[#6fc7ba]/20 hover:bg-[#6fc7ba]/10"
-                onClick={() =>
-                  setClientSeed(Math.random().toString(36).substring(2, 15))
-                }
-              >
-                <Icon icon="ph:arrows-counter-clockwise" className="h-4 w-4" />
-              </Button>
-            </div>
-            <p className="text-xs text-white/50 mt-1">
-              You can change your client seed before each bet
-            </p>
-          </div>
-
-          <div>
-            <h3 className="text-sm font-medium text-white/70 mb-1">
-              Server Seed (Hashed)
-            </h3>
-            <div className="bg-[#2a2627] p-2 rounded text-xs font-mono overflow-x-auto text-white/70">
-              {serverSeedHash}
-            </div>
-          </div>
-
-          <div className="text-sm text-white/70">
-            <p>
-              Our provably fair system ensures that all game outcomes are random
-              and cannot be manipulated. The combination of your client seed and
-              our server seed is used to generate the roll result. After each
-              game, you can verify that the result was fair and not
-              predetermined.
-            </p>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-
-  // Manual bet UI controls
-  const BetControls = () => (
-    <div className="space-y-3">
-      {/* Bet Amount */}
-      <div>
-        <div className="flex justify-between mb-2">
-          <span className="text-sm text-white/70">Bet Amount</span>
-          <span className="text-sm text-white/70">${"0.00"}</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <div className="relative flex-1">
-            <Input
-              type="number"
-              value={betAmount}
-              onChange={(e) => setBetAmount(e.target.value)}
-              placeholder="0.00000000"
-              className="bg-[#2a2627] border-none text-white h-10 pr-8"
-              disabled={isAutoBetting}
-            />
-            <div className="absolute right-2 top-1/2 -translate-y-1/2">
-              <Icon
-                icon="ph:currency-circle-dollar"
-                className="text-[#6fc7ba] h-5 w-5"
-              />
-            </div>
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-10 border-[#2a2627] bg-[#2a2627] text-xs hover:bg-[#3a3637] text-white"
-            onClick={() =>
-              setBetAmount((parseFloat(betAmount || "0") / 2).toString())
-            }
-            disabled={isAutoBetting}
-          >
-            ½
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-10 border-[#2a2627] bg-[#2a2627] text-xs hover:bg-[#3a3637] text-white"
-            onClick={() =>
-              setBetAmount((parseFloat(betAmount || "0") * 2).toString())
-            }
-            disabled={isAutoBetting}
-          >
-            2×
-          </Button>
-        </div>
-      </div>
-
-      {gameMode === "Auto" && (
-        <>
-          {/* Number of Bets */}
-          <div>
-            <div className="flex justify-between mb-2">
-              <span className="text-sm text-white/70">Number of Bets</span>
-            </div>
-            <div className="relative">
-              <Input
-                type="number"
-                value={
-                  autoBetSettings.numberOfBets === "infinity"
-                    ? "0"
-                    : autoBetSettings.numberOfBets
-                }
-                onChange={(e) => {
-                  const value = parseInt(e.target.value);
-                  setAutoBetSettings((prev) => ({
-                    ...prev,
-                    numberOfBets: isNaN(value) ? 0 : value,
-                  }));
-                }}
-                placeholder="0"
-                disabled={isAutoBetting}
-                className="bg-[#2a2627] border-none text-white h-10 pr-10"
-              />
-              <button
-                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-white hover:text-[#6fc7ba]"
-                onClick={() => {
-                  setAutoBetSettings((prev) => ({
-                    ...prev,
-                    numberOfBets:
-                      prev.numberOfBets === "infinity" ? 0 : "infinity",
-                  }));
-                }}
-                disabled={isAutoBetting}
-              >
-                <Icon
-                  icon="ph:infinity-bold"
-                  className={`h-5 w-5 ${autoBetSettings.numberOfBets === "infinity" ? "text-[#6fc7ba]" : "text-white/70"}`}
-                />
-              </button>
-            </div>
-          </div>
-
-          {/* On Win */}
-          <div>
-            <div className="flex justify-between mb-2">
-              <span className="text-sm text-white/70">On Win</span>
-            </div>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className={`py-1 px-3 text-xs h-10 ${autoBetSettings.onWin.action === "reset" ? "bg-[#3a3637] text-white" : "bg-[#2a2627] text-white/70"} border-[#2a2627]`}
-                onClick={() => {
-                  setAutoBetSettings((prev) => ({
-                    ...prev,
-                    onWin: { ...prev.onWin, action: "reset" },
-                  }));
-                }}
-                disabled={isAutoBetting}
-              >
-                Reset
-              </Button>
-              <div className="flex-1 flex items-center gap-1 h-10 px-2 bg-[#2a2627] rounded">
-                <span className="text-xs text-white/70">Increase by:</span>
-                <Input
-                  type="number"
-                  value={autoBetSettings.onWin.percentage}
-                  onChange={(e) => {
-                    const value = parseInt(e.target.value);
-                    setAutoBetSettings((prev) => ({
-                      ...prev,
-                      onWin: {
-                        action: "increase",
-                        percentage: isNaN(value) ? 0 : value,
-                      },
-                    }));
-                  }}
-                  className="h-7 bg-[#2a2627] border-none text-white text-xs w-12"
-                  disabled={
-                    isAutoBetting || autoBetSettings.onWin.action !== "increase"
-                  }
-                />
-                <span className="text-xs text-white/70">%</span>
-              </div>
-            </div>
-          </div>
-
-          {/* On Loss */}
-          <div>
-            <div className="flex justify-between mb-2">
-              <span className="text-sm text-white/70">On Loss</span>
-            </div>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className={`py-1 px-3 text-xs h-10 ${autoBetSettings.onLoss.action === "reset" ? "bg-[#3a3637] text-white" : "bg-[#2a2627] text-white/70"} border-[#2a2627]`}
-                onClick={() => {
-                  setAutoBetSettings((prev) => ({
-                    ...prev,
-                    onLoss: { ...prev.onLoss, action: "reset" },
-                  }));
-                }}
-                disabled={isAutoBetting}
-              >
-                Reset
-              </Button>
-              <div className="flex-1 flex items-center gap-1 h-10 px-2 bg-[#2a2627] rounded">
-                <span className="text-xs text-white/70">Increase by:</span>
-                <Input
-                  type="number"
-                  value={autoBetSettings.onLoss.percentage}
-                  onChange={(e) => {
-                    const value = parseInt(e.target.value);
-                    setAutoBetSettings((prev) => ({
-                      ...prev,
-                      onLoss: {
-                        action: "increase",
-                        percentage: isNaN(value) ? 0 : value,
-                      },
-                    }));
-                  }}
-                  className="h-7 bg-[#2a2627] border-none text-white text-xs w-12"
-                  disabled={
-                    isAutoBetting ||
-                    autoBetSettings.onLoss.action !== "increase"
-                  }
-                />
-                <span className="text-xs text-white/70">%</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Stop on Profit */}
-          <div>
-            <div className="flex justify-between mb-2">
-              <span className="text-sm text-white/70">Stop on Profit</span>
-              <span className="text-sm text-white/70">${"0.00"}</span>
-            </div>
-            <div className="relative">
-              <Input
-                type="number"
-                value={autoBetSettings.stopOnProfit}
-                onChange={(e) => {
-                  setAutoBetSettings((prev) => ({
-                    ...prev,
-                    stopOnProfit: e.target.value,
-                  }));
-                }}
-                placeholder="0.00000000"
-                disabled={isAutoBetting}
-                className="bg-[#2a2627] border-none text-white h-10 pr-8"
-              />
-              <div className="absolute right-2 top-1/2 -translate-y-1/2">
-                <Icon
-                  icon="ph:currency-circle-dollar"
-                  className="text-[#6fc7ba] h-5 w-5"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Stop on Loss */}
-          <div>
-            <div className="flex justify-between mb-2">
-              <span className="text-sm text-white/70">Stop on Loss</span>
-              <span className="text-sm text-white/70">${"0.00"}</span>
-            </div>
-            <div className="relative">
-              <Input
-                type="number"
-                value={autoBetSettings.stopOnLoss}
-                onChange={(e) => {
-                  setAutoBetSettings((prev) => ({
-                    ...prev,
-                    stopOnLoss: e.target.value,
-                  }));
-                }}
-                placeholder="0.00000000"
-                disabled={isAutoBetting}
-                className="bg-[#2a2627] border-none text-white h-10 pr-8"
-              />
-              <div className="absolute right-2 top-1/2 -translate-y-1/2">
-                <Icon
-                  icon="ph:currency-circle-dollar"
-                  className="text-[#6fc7ba] h-5 w-5"
-                />
-              </div>
-            </div>
-          </div>
-        </>
-      )}
-
-      {gameMode === "Manual" && (
-        <div>
-          <div className="flex justify-between mb-2">
-            <span className="text-sm text-white/70">Profit on Win</span>
-            <span className="text-sm text-white/70">${"0.00"}</span>
-          </div>
-          <div className="relative">
-            <Input
-              type="text"
-              value={calculateProfit()}
-              readOnly
-              className="bg-[#2a2627] border-none text-white h-10 pr-8"
-            />
-            <div className="absolute right-2 top-1/2 -translate-y-1/2">
-              <Icon
-                icon="ph:currency-circle-dollar"
-                className="text-[#6fc7ba] h-5 w-5"
-              />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Button */}
-      <Button
-        onClick={
-          gameMode === "Auto"
-            ? isAutoBetting
-              ? stopAutoBet
-              : startAutoBet
-            : handleRoll
-        }
-        disabled={isRolling}
-        className={`w-full ${
-          gameMode === "Auto" && isAutoBetting
-            ? "bg-red-500 hover:bg-red-600"
-            : "bg-[#6fc7ba] hover:bg-[#6fc7ba]/90"
-        } text-black font-bold py-6 h-12`}
-      >
-        {isRolling ? (
-          <div className="flex items-center gap-2">
-            <Icon icon="mdi:loading" className="h-4 w-4 animate-spin" />
-            Rolling...
-          </div>
-        ) : gameMode === "Auto" ? (
-          isAutoBetting ? (
-            "Stop Autobet"
-          ) : (
-            "Start Autobet"
-          )
-        ) : (
-          "Bet"
-        )}
-      </Button>
-    </div>
-  );
-
   // Game stats UI
   const GameStats = () => (
-    <div className="grid grid-cols-3 gap-3 bg-[#2a2627] rounded-lg p-3">
+    <div className="grid grid-cols-3 gap-3 bg-[#2a2627] rounded-3xl py-4 px-6 font-bold font-Onest uppercase">
       <div className="space-y-1">
-        <div className="text-white/70 text-xs">Multiplier</div>
+        <div className="text-white/70 text-xs ">Multiplier</div>
         <div className="flex items-center">
           <span className="text-white text-lg font-semibold">
             {calculateMultiplier().toFixed(4)}
@@ -978,136 +899,6 @@ export default function DieRollGame() {
   };
 
   // Update the BetDetailsModal to include game hash calculation
-  const BetDetailsModal = () => {
-    if (!selectedBet) return null;
-
-    const isWin =
-      selectedBet.condition === "OVER"
-        ? selectedBet.roll >= selectedBet.target
-        : selectedBet.roll <= selectedBet.target;
-
-    // Calculate the game hash
-    const calculateGameHash = () => {
-      if (!selectedBet?.serverSeed) return "Server seed not revealed yet";
-
-      const combinedSeed = `${selectedBet.serverSeed}${selectedBet.clientSeed}`;
-      return sha256(combinedSeed).toString(Hex);
-    };
-
-    const gameHash = calculateGameHash();
-
-    return (
-      <Dialog open={!!selectedBet} onOpenChange={() => setSelectedBet(null)}>
-        <DialogContent className="bg-[#1a1718] border-[#6fc7ba]/20 text-white max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="text-[#6fc7ba] flex items-center gap-2">
-              <div
-                className={`w-6 h-6 rounded-full flex items-center justify-center text-black font-bold text-xs ${
-                  isWin ? "bg-[#6fc7ba]" : "bg-red-500"
-                }`}
-              >
-                {selectedBet.roll}
-              </div>
-              <span>{isWin ? "Win" : "Loss"} Details</span>
-            </DialogTitle>
-          </DialogHeader>
-
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <h3 className="text-sm font-medium text-white/70 mb-1">
-                  Roll Result
-                </h3>
-                <div className="text-lg font-bold text-white">
-                  {selectedBet.roll}
-                </div>
-              </div>
-              <div>
-                <h3 className="text-sm font-medium text-white/70 mb-1">
-                  Target
-                </h3>
-                <div className="text-lg font-bold text-white">
-                  {selectedBet.condition} {selectedBet.target}
-                </div>
-              </div>
-              <div>
-                <h3 className="text-sm font-medium text-white/70 mb-1">
-                  Multiplier
-                </h3>
-                <div className="text-lg font-bold text-white">
-                  {selectedBet.multiplier.toFixed(4)}×
-                </div>
-              </div>
-              <div>
-                <h3 className="text-sm font-medium text-white/70 mb-1">
-                  Profit
-                </h3>
-                <div
-                  className={`text-lg font-bold ${
-                    selectedBet.profit >= 0 ? "text-[#6fc7ba]" : "text-red-500"
-                  }`}
-                >
-                  {selectedBet.profit >= 0 ? "+" : ""}
-                  {selectedBet.profit.toFixed(8)} KAS
-                </div>
-              </div>
-            </div>
-
-            <div className="border-t border-[#3a3637] pt-4">
-              <h3 className="text-sm font-bold text-[#6fc7ba] mb-3">
-                Provably Fair Verification
-              </h3>
-
-              <div className="space-y-3">
-                <div>
-                  <h4 className="text-sm font-medium text-white/70 mb-1">
-                    Client Seed
-                  </h4>
-                  <div className="bg-[#2a2627] p-2 rounded text-xs font-mono overflow-x-auto text-white">
-                    {selectedBet.clientSeed}
-                  </div>
-                </div>
-
-                <>
-                  <div>
-                    <h4 className="text-sm font-medium text-white/70 mb-1">
-                      Server Seed
-                    </h4>
-                    <div className="bg-[#2a2627] p-2 rounded text-xs font-mono overflow-x-auto text-white">
-                      {selectedBet.serverSeed}
-                    </div>
-                  </div>
-
-                  <div>
-                    <h4 className="text-sm font-medium text-white/70 mb-1">
-                      Game Hash (SHA256)
-                    </h4>
-                    <div className="bg-[#2a2627] p-2 rounded text-xs font-mono overflow-x-auto text-white">
-                      {gameHash}
-                    </div>
-                    <p className="text-xs text-white/50 mt-1">
-                      SHA256(clientSeed + serverSeed)
-                    </p>
-                  </div>
-                </>
-              </div>
-
-              <div className="mt-4 text-xs text-white/70">
-                <p>
-                  The combination of your client seed and our server seed
-                  determines the outcome of each bet.
-                </p>
-                <p className="mt-1">
-                  You can verify the fairness of this bet by checking these
-                  values against the roll result.
-                </p>
-              </div>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-    );
-  };
 
   return (
     <div className="relative w-full h-full bg-[#1a1718] rounded-3xl overflow-hidden">
@@ -1144,9 +935,6 @@ export default function DieRollGame() {
               }}
             >
               Auto
-            </button>
-            <button className="w-8 h-8 flex items-center justify-center text-white">
-              <Icon icon="ph:link-simple" className="h-4 w-4" />
             </button>
           </div>
 
@@ -1196,12 +984,25 @@ export default function DieRollGame() {
         </div>
 
         <div className="flex-1 bg-[#2a2627] rounded-xl p-3 overflow-auto">
-          <BetControls />
+          <BetControls
+            onSiteBalance={onSiteBalance}
+            betAmount={betAmount}
+            setBetAmount={setBetAmount}
+            gameMode={gameMode}
+            isAutoBetting={isAutoBetting}
+            isRolling={isRolling}
+            autoBetSettings={autoBetSettings}
+            setAutoBetSettings={setAutoBetSettings}
+            startAutoBet={startAutoBet}
+            stopAutoBet={stopAutoBet}
+            handleRoll={handleRoll}
+            calculateProfit={calculateProfit}
+          />
         </div>
       </div>
 
       {/* Desktop View */}
-      <div className="hidden lg:flex h-full max-h-full">
+      <div className="hidden lg:flex h-full max-h-full font-Onest">
         <div className="w-1/3 bg-[#2a2627] p-4 flex flex-col overflow-auto">
           {/* Mode Toggle */}
           <div className="rounded-full bg-[#1a1718] p-1 flex border border-[#3a3637] mb-4">
@@ -1231,15 +1032,30 @@ export default function DieRollGame() {
             >
               Auto
             </button>
-            <button className="w-8 h-8 flex items-center justify-center text-white">
-              <Icon icon="ph:link-simple" className="h-4 w-4" />
-            </button>
           </div>
 
-          <BetControls />
+          <BetControls
+            onSiteBalance={onSiteBalance}
+            betAmount={betAmount}
+            setBetAmount={setBetAmount}
+            gameMode={gameMode}
+            isAutoBetting={isAutoBetting}
+            isRolling={isRolling}
+            autoBetSettings={autoBetSettings}
+            setAutoBetSettings={setAutoBetSettings}
+            startAutoBet={startAutoBet}
+            stopAutoBet={stopAutoBet}
+            handleRoll={handleRoll}
+            calculateProfit={calculateProfit}
+          />
 
           <div className="mt-auto text-right">
-            <ProvablyFairModal />
+            <ProvablyFair
+              sessionId={sessionData?.sessionId ?? ""}
+              clientSeed={clientSeed}
+              setClientSeed={setClientSeed}
+              serverSeedHash={serverSeedHash ?? ""}
+            />
           </div>
         </div>
 
@@ -1279,11 +1095,9 @@ export default function DieRollGame() {
               >
                 {/* Slider Thumb */}
                 <div
-                  className="absolute top-1/2 -translate-y-1/2 bg-[#6fc7ba] w-8 h-8 flex items-center justify-center rounded cursor-pointer z-10 shadow-md"
+                  className="absolute top-1/2 -translate-y-1/2 bg-[#6fc7ba] w-8 h-8 flex items-center justify-center rounded-full cursor-pointer z-10 shadow-md"
                   style={{ left: `calc(${targetNumber}% - 16px)` }}
-                >
-                  <Icon icon="ph:list-bullets" className="text-white" />
-                </div>
+                ></div>
 
                 {/* Roll Result Indicator */}
                 {showRollAnimation && lastRollValue !== null && (
@@ -1310,7 +1124,12 @@ export default function DieRollGame() {
       </div>
 
       {/* Bet Details Modal */}
-      <BetDetailsModal />
+      {selectedBet && (
+        <BetDetailsModal
+          selectedBet={selectedBet}
+          setSelectedBet={setSelectedBet}
+        />
+      )}
     </div>
   );
 }
