@@ -28,6 +28,8 @@ export default function LeaderboardPage() {
     refetchInterval: 30000, // Refresh every 30 seconds
   });
 
+  console.log(leaderboard, isLoading);
+
   const sortedLeaderboard = leaderboard?.sort((a, b) =>
     sortBy === "bet"
       ? a.betAmountRank - b.betAmountRank
