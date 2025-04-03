@@ -372,9 +372,7 @@ export default function CoinflipGame() {
             <CoinFlipBet
               handleCreateBet={handleCreateBet}
               betAmount={betAmount}
-              clientSeed={clientSeed}
               setBetAmount={setBetAmount}
-              setClientSeed={setClientSeed}
             />
           </div>
 

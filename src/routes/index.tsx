@@ -13,10 +13,10 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   return (
-    <div className="p-4">
+    <div className="p-4 max-w-[1440px] mx-auto">
       <div
         style={{ backgroundImage: `url(${Hero})` }}
-        className="rounded-3xl bg-cover bg-center bg-no-repeat h-1/2 aspect-[10/4] w-full"
+        className="rounded-3xl bg-cover bg-center bg-no-repeat w-full aspect-[10/4]"
       />
       <div className="flex items-center gap-2 py-5">
         <Icon icon="mdi:dice" className="text-white/50 text-2xl" />
