@@ -1,7 +1,7 @@
 import Marquee from "@/components/Marquee";
 import Sidebar from "@/components/Sidebar";
 import { createRootRoute, Outlet } from "@tanstack/react-router";
-import { Toaster } from "sonner";
+import { Toaster } from "@/components/ui/sonner";
 
 export const Route = createRootRoute({
   component: () => (
