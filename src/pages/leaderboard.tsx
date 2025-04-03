@@ -193,9 +193,9 @@ export default function LeaderboardPage() {
             />
           </div>
 
-          <div className="space-y-1 bg-[#444] p-1 -mt-20 md:-mt-30 rounded-3xl relative z-20">
+          <div className="space-y-1 bg-[#444] p-1 -mt-20 md:-mt-30 rounded-3xl relative z-20 max-h-[400px] overflow-y-auto scrollbar-thin scrollbar-thumb-[#6fc7ba] scrollbar-track-[#444]">
             <AnimatePresence>
-              {sortedLeaderboard?.map((entry, index) => (
+              {sortedLeaderboard?.slice(3).map((entry, index) => (
                 <motion.div
                   key={entry.address}
                   initial={{ opacity: 0, y: 20 }}
@@ -211,7 +211,7 @@ export default function LeaderboardPage() {
                       <div
                         className={cn(
                           "w-8 h-8 md:w-10 md:h-10 rounded-lg overflow-hidden",
-                          index === 0 ? "bg-[#6fc7ba]" : "bg-white/10",
+                          "bg-white/10",
                         )}
                       >
                         <Blockies
@@ -225,11 +225,6 @@ export default function LeaderboardPage() {
                     <div>
                       <h3 className="font-semibold text-base md:text-lg text-white flex items-center gap-2">
                         {entry.username}
-                        {index === 0 && (
-                          <span className="text-[10px] md:text-sm text-[#6fc7ba]">
-                            👑 Leader
-                          </span>
-                        )}
                       </h3>
                       <p className="text-xs md:text-sm flex items-center gap-1 md:gap-2 text-gray-400 w-fit sm:w-auto font-DM-Sans">
                         {formatAddress(entry.address || "")}
