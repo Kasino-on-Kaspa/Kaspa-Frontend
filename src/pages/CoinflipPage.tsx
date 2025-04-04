@@ -2,6 +2,7 @@ import CoinflipGame from "@/components/games/CoinflipGame";
 import GameStats from "@/components/GameStats";
 import GameDescription from "@/components/GameDescription";
 import { Icon } from "@iconify/react/dist/iconify.js";
+import GameWins from "@/components/GameWins";
 
 export default function CoinflipPage() {
   const gameData = {
@@ -122,7 +123,7 @@ export default function CoinflipPage() {
           {/* Stats and Description Grid */}
           <div>
             <GameDescription {...coinFlipDescription} />
-
+            <GameWins gameName="coinflip" />
             <GameStats gameData={gameData} />
           </div>
         </div>

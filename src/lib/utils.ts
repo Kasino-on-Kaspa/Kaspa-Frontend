@@ -64,3 +64,13 @@ export function formatMaxAmount(totalAmount: number): string {
   const maxAmount = getMaxAmountWithGas(totalAmount);
   return formatKAS(BigInt(maxAmount));
 }
+
+export function formatDate(dateString: string): string {
+  const date = new Date(dateString);
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
+}

@@ -1,6 +1,8 @@
 import DieRollGame from "@/components/games/DieRollGame";
 import GameStats from "@/components/GameStats";
 import { Icon } from "@iconify/react/dist/iconify.js";
+import GameWins from "@/components/GameWins";
+
 export default function DiceRollPage() {
   const gameData = {
     totalBets: 203456,
@@ -75,6 +77,8 @@ export default function DiceRollPage() {
             number between 1 and 6.
           </p>
         </div>
+
+        <GameWins gameName="dieroll" />
         <GameStats gameData={gameData} />
       </div>
     </main>
