@@ -44,7 +44,7 @@ export default function LeaderboardPage() {
     queryKey: ["leaderboard"],
     queryFn: async () => {
       const { data } = await axios.get<LeaderboardEntry[]>(
-        "http://localhost:3000/leaderboard",
+        `${import.meta.env.VITE_BACKEND_URL}/leaderboard`,
       );
       console.log(data);
       return data;
