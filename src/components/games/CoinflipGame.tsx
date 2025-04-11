@@ -27,6 +27,7 @@ export default function CoinflipGame() {
     setSelectedSide,
     selectedSide,
     setIsBusy,
+    isBusy,
   } = useCoinflipStore();
 
   const { isAuthenticated } = useWalletStore();
@@ -478,35 +479,144 @@ export default function CoinflipGame() {
           {/* Coin Selection */}
           {sessionData?.sessionId && gameState === "CHOICE" && !isFlipping && (
             <div className="flex-1 flex flex-col items-center justify-center h-full">
-              <div className="flex flex-col sm:flex-row justify-center items-center gap-4 sm:gap-10">
-                <Button
-                  className={`w-24 h-24 sm:w-32 sm:h-32 rounded-full ${
-                    selectedSide === "HEADS"
-                      ? "border border-[#6fc7ba] border-dashed"
-                      : "bg-white/5 text-white/70"
-                  } flex flex-col items-center justify-center transition-colors`}
+              <div className="flex flex-col sm:flex-row justify-center items-center gap-12 sm:gap-24">
+                {/* Heads Selection */}
+                <div
                   onClick={() => setSelectedSide("HEADS")}
+                  className={`group relative w-28 h-28 sm:w-36 sm:h-36 cursor-pointer transition-all duration-500 ${
+                    selectedSide === "HEADS" ? "scale-110" : "hover:scale-105"
+                  }`}
                 >
-                  <img src={headsCoin} alt="Heads" className="w-full h-full" />
-                </Button>
-                <Button
-                  className={`w-24 h-24 sm:w-32 sm:h-32 rounded-full ${
-                    selectedSide === "TAILS"
-                      ? "border border-[#6fc7ba] border-dashed bg-transparent"
-                      : "bg-white/5 text-white/70"
-                  } flex flex-col items-center justify-center transition-colors`}
+                  {/* Coin container */}
+                  <div className="relative w-full h-full rounded-full">
+                    <img
+                      src={headsCoin}
+                      alt="Heads"
+                      className={`w-full h-full rounded-full transition-all duration-500 ${
+                        selectedSide === "HEADS"
+                          ? "brightness-110"
+                          : "group-hover:brightness-110"
+                      }`}
+                    />
+                  </div>
+                  {/* Tooltip */}
+                  <div
+                    className={`absolute -top-12 left-1/2 -translate-x-1/2 px-3 py-1.5 rounded-lg transition-all duration-300 ${
+                      selectedSide === "HEADS"
+                        ? "bg-[#6fc7ba]/20 text-[#6fc7ba] scale-110"
+                        : "bg-white/5 text-white/60 group-hover:bg-white/10 group-hover:text-white/80"
+                    }`}
+                  >
+                    <span className="text-sm font-medium whitespace-nowrap">
+                      Select Heads
+                    </span>
+                  </div>
+                </div>
+
+                {/* Tails Selection */}
+                <div
                   onClick={() => setSelectedSide("TAILS")}
+                  className={`group relative w-28 h-28 sm:w-36 sm:h-36 cursor-pointer transition-all duration-500 ${
+                    selectedSide === "TAILS" ? "scale-110" : "hover:scale-105"
+                  }`}
                 >
-                  <img src={tailsCoin} alt="Tails" className="w-full h-full" />
-                </Button>
+                  {/* Coin container */}
+                  <div className="relative w-full h-full rounded-full">
+                    <img
+                      src={tailsCoin}
+                      alt="Tails"
+                      className={`w-full h-full rounded-full transition-all duration-500 ${
+                        selectedSide === "TAILS"
+                          ? "brightness-110"
+                          : "group-hover:brightness-110"
+                      }`}
+                    />
+                  </div>
+                  {/* Tooltip */}
+                  <div
+                    className={`absolute -top-12 left-1/2 -translate-x-1/2 px-3 py-1.5 rounded-lg transition-all duration-300 ${
+                      selectedSide === "TAILS"
+                        ? "bg-[#6fc7ba]/20 text-[#6fc7ba] scale-110"
+                        : "bg-white/5 text-white/60 group-hover:bg-white/10 group-hover:text-white/80"
+                    }`}
+                  >
+                    <span className="text-sm font-medium whitespace-nowrap">
+                      Select Tails
+                    </span>
+                  </div>
+                </div>
               </div>
-              <div className="flex justify-center gap-4 mt-4">
+
+              <div className="flex justify-center gap-4 mt-12">
                 <button
                   onClick={handleFlip}
-                  className="bg-[#6fc7ba] text-[#333] hover:bg-[#6fc7ba]/90 py-3 sm:py-4 px-4 sm:px-6 transition-colors tracking-tight font-medium rounded-full text-sm sm:text-base"
+                  disabled={!selectedSide}
+                  className={`group relative px-8 py-4 rounded-full transition-all duration-500 ${
+                    selectedSide
+                      ? "bg-[#6fc7ba] hover:bg-[#6fc7ba]/90"
+                      : "bg-white/5 cursor-not-allowed"
+                  }`}
                 >
-                  Flip Coin
+                  {/* Button content */}
+                  <div className="relative flex items-center gap-2">
+                    <Icon
+                      icon="ph:coin-fill"
+                      className={`text-2xl transition-transform duration-500 ${
+                        selectedSide
+                          ? "text-[#333] group-hover:rotate-180"
+                          : "text-white/40"
+                      }`}
+                    />
+                    <span
+                      className={`text-lg font-medium transition-colors duration-500 ${
+                        selectedSide ? "text-[#333]" : "text-white/40"
+                      }`}
+                    >
+                      Flip Coin
+                    </span>
+                  </div>
                 </button>
+
+                {gameState === "CHOICE" && (
+                  <button
+                    onClick={() => flipCoin("CASHOUT")}
+                    disabled={sessionData?.logs?.length === 0 || isBusy}
+                    className={`group relative px-8 py-4 rounded-full transition-all duration-500 ${
+                      sessionData?.logs?.length === 0 || isBusy
+                        ? "bg-white/5 cursor-not-allowed"
+                        : "bg-[#6fc7ba] hover:bg-[#6fc7ba]/90"
+                    }`}
+                  >
+                    {/* Button content */}
+                    <div className="relative flex items-center gap-2">
+                      <Icon
+                        icon="ph:trophy-fill"
+                        className={`text-2xl transition-transform duration-500 ${
+                          sessionData?.logs?.length === 0 || isBusy
+                            ? "text-white/40"
+                            : "text-[#333] group-hover:scale-110"
+                        }`}
+                      />
+                      <span
+                        className={`text-lg font-medium transition-colors duration-500 ${
+                          sessionData?.logs?.length === 0 || isBusy
+                            ? "text-white/40"
+                            : "text-[#333]"
+                        }`}
+                      >
+                        Cashout
+                      </span>
+                    </div>
+                    {/* Tooltip */}
+                    {(sessionData?.logs?.length === 0 || isBusy) && (
+                      <div className="absolute -right-2 translate-x-full top-1/2 -translate-y-1/2 px-2 py-1 rounded-md bg-white/5 text-white/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-xs pointer-events-none">
+                        {sessionData?.logs?.length === 0
+                          ? "No bets to cash out"
+                          : "Game is busy"}
+                      </div>
+                    )}
+                  </button>
+                )}
               </div>
             </div>
           )}
@@ -551,6 +661,15 @@ export default function CoinflipGame() {
                   <span className="text-white/80 text-sm">Multiplier</span>
                   <span className="text-[#6fc7ba] font-bold text-lg">
                     {(1.96 ** (sessionData.level - 1)).toFixed(2)}x
+                  </span>
+                </div>
+
+                {/* Selected Option */}
+
+                <div className="flex items-center gap-2">
+                  <span className="text-white/80 text-sm">Selected</span>
+                  <span className="text-[#6fc7ba] font-bold text-lg">
+                    {selectedSide || "--"}
                   </span>
                 </div>
               </div>
