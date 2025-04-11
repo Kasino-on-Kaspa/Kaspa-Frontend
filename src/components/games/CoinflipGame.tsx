@@ -17,7 +17,6 @@ export default function CoinflipGame() {
     initializeGame,
     createBet,
     flipCoin,
-    sessionNext,
     isConnected,
     flipResult,
     sessionData,
@@ -27,6 +26,7 @@ export default function CoinflipGame() {
     sessionCleanup,
     setSelectedSide,
     selectedSide,
+    setIsBusy,
   } = useCoinflipStore();
 
   const { isAuthenticated } = useWalletStore();
@@ -44,7 +44,6 @@ export default function CoinflipGame() {
   const [showGameEndPopup, setShowGameEndPopup] = useState(false);
 
   // Audio refs
-  const cashoutSound = useRef(new Audio("/coin-sounds/cashout.wav"));
   const successSound = useRef(new Audio("/coin-sounds/success-flip.wav"));
   const flipSound = useRef(new Audio("/coin-sounds/flip.wav"));
 
@@ -99,25 +98,6 @@ export default function CoinflipGame() {
     flipCoin(selectedSide);
   };
 
-  const handleNext = async (option: "CASHOUT" | "CONTINUE") => {
-    if (option === "CASHOUT") {
-      setShowGameEndPopup(true);
-      setBetAmount("10");
-      setClientSeed(Math.random().toString(36).substring(2, 15));
-      cashoutSound.current.play();
-    } else {
-      // For CONTINUE, reset all animation and result states first
-      setShowResult(false);
-      setIsAnimating(false);
-      setCurrentGif(null);
-      setIsFlipping(false);
-      // Clear the flip result by setting it to null in the store
-      useCoinflipStore.getState().flipResult = null;
-      await sessionNext(option);
-    }
-    sessionNext(option);
-  };
-
   // Handle flip result with animation
   useEffect(() => {
     if (flipResult && isFlipping) {
@@ -140,7 +120,6 @@ export default function CoinflipGame() {
 
       // Wait for GIF to complete one cycle (1 second)
       const gifTimer = setTimeout(() => {
-        setShowResult(true);
         const selectedCoin = flipResult === "HEADS" ? headsCoin : tailsCoin;
         console.log("Selected Static Coin:", selectedCoin);
         setCurrentGif(selectedCoin);
@@ -163,11 +142,22 @@ export default function CoinflipGame() {
     }
   }, [flipResult, selectedSide, isFlipping]);
 
+  useEffect(() => {
+    if (isFlipping) {
+      setIsBusy(true);
+    } else {
+      setIsBusy(false);
+    }
+  }, [isFlipping]);
+
   const GameEndPopup = () => {
-    if (!showGameEndPopup) return null;
-
-    const isWinner = flipResult && selectedSide && flipResult === selectedSide;
-
+    const reason =
+      sessionData?.logs[sessionData?.logs.length - 1]?.playerChoice == "CASHOUT"
+        ? "CASHOUT"
+        : sessionData?.logs[sessionData?.logs.length - 1]?.client_won
+          ? "WIN"
+          : "LOSS";
+    if (reason == "WIN") return null;
     return (
       <div
         className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10"
@@ -176,14 +166,14 @@ export default function CoinflipGame() {
         <div className="bg-[#2A2A2A] border border-white/10 text-white rounded-xl p-6 shadow-lg max-w-[90vw] w-[300px]">
           <div className="flex flex-col items-center justify-center space-y-4">
             <Icon
-              icon={isWinner ? "ph:trophy-fill" : "ph:x-circle-fill"}
-              className={`text-6xl ${isWinner ? "text-[#6fc7ba]" : "text-red-500"}`}
+              icon={reason == "CASHOUT" ? "ph:trophy-fill" : "ph:x-circle-fill"}
+              className={`text-6xl ${reason == "CASHOUT" ? "text-[#6fc7ba]" : "text-red-500"}`}
             />
             <h2 className="text-2xl font-bold text-white text-center">
-              {isWinner ? "Congratulations!" : "Game Over"}
+              {reason == "CASHOUT" ? "Congratulations!" : "Game Over"}
             </h2>
             <p className="text-sm text-white/70 text-center">
-              {isWinner
+              {reason == "CASHOUT"
                 ? "You've decided to cash out. Thanks for playing!"
                 : "Better luck next time!"}
             </p>
@@ -376,7 +366,7 @@ export default function CoinflipGame() {
 
           {/* Game Section */}
           <div className="flex-1 relative flex items-center justify-center">
-            {showGameEndPopup && <GameEndPopup />}
+            <GameEndPopup />
           </div>
         </div>
       </div>
@@ -486,50 +476,40 @@ export default function CoinflipGame() {
         {/* Game Section */}
         <div className="flex-1 relative">
           {/* Coin Selection */}
-          {sessionData?.sessionId &&
-            gameState === "FLIP_CHOICE" &&
-            !isFlipping && (
-              <div className="flex-1 flex flex-col items-center justify-center h-full">
-                <div className="flex flex-col sm:flex-row justify-center items-center gap-4 sm:gap-10">
-                  <Button
-                    className={`w-24 h-24 sm:w-32 sm:h-32 rounded-full ${
-                      selectedSide === "HEADS"
-                        ? "border border-[#6fc7ba] border-dashed"
-                        : "bg-white/5 text-white/70"
-                    } flex flex-col items-center justify-center transition-colors`}
-                    onClick={() => setSelectedSide("HEADS")}
-                  >
-                    <img
-                      src={headsCoin}
-                      alt="Heads"
-                      className="w-full h-full"
-                    />
-                  </Button>
-                  <Button
-                    className={`w-24 h-24 sm:w-32 sm:h-32 rounded-full ${
-                      selectedSide === "TAILS"
-                        ? "border border-[#6fc7ba] border-dashed bg-transparent"
-                        : "bg-white/5 text-white/70"
-                    } flex flex-col items-center justify-center transition-colors`}
-                    onClick={() => setSelectedSide("TAILS")}
-                  >
-                    <img
-                      src={tailsCoin}
-                      alt="Tails"
-                      className="w-full h-full"
-                    />
-                  </Button>
-                </div>
-                <div className="flex justify-center gap-4 mt-4">
-                  <button
-                    onClick={handleFlip}
-                    className="bg-[#6fc7ba] text-[#333] hover:bg-[#6fc7ba]/90 py-3 sm:py-4 px-4 sm:px-6 transition-colors tracking-tight font-medium rounded-full text-sm sm:text-base"
-                  >
-                    Flip Coin
-                  </button>
-                </div>
+          {sessionData?.sessionId && gameState === "CHOICE" && !isFlipping && (
+            <div className="flex-1 flex flex-col items-center justify-center h-full">
+              <div className="flex flex-col sm:flex-row justify-center items-center gap-4 sm:gap-10">
+                <Button
+                  className={`w-24 h-24 sm:w-32 sm:h-32 rounded-full ${
+                    selectedSide === "HEADS"
+                      ? "border border-[#6fc7ba] border-dashed"
+                      : "bg-white/5 text-white/70"
+                  } flex flex-col items-center justify-center transition-colors`}
+                  onClick={() => setSelectedSide("HEADS")}
+                >
+                  <img src={headsCoin} alt="Heads" className="w-full h-full" />
+                </Button>
+                <Button
+                  className={`w-24 h-24 sm:w-32 sm:h-32 rounded-full ${
+                    selectedSide === "TAILS"
+                      ? "border border-[#6fc7ba] border-dashed bg-transparent"
+                      : "bg-white/5 text-white/70"
+                  } flex flex-col items-center justify-center transition-colors`}
+                  onClick={() => setSelectedSide("TAILS")}
+                >
+                  <img src={tailsCoin} alt="Tails" className="w-full h-full" />
+                </Button>
               </div>
-            )}
+              <div className="flex justify-center gap-4 mt-4">
+                <button
+                  onClick={handleFlip}
+                  className="bg-[#6fc7ba] text-[#333] hover:bg-[#6fc7ba]/90 py-3 sm:py-4 px-4 sm:px-6 transition-colors tracking-tight font-medium rounded-full text-sm sm:text-base"
+                >
+                  Flip Coin
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Flipping Animation */}
           {isFlipping && (
@@ -548,28 +528,34 @@ export default function CoinflipGame() {
             </div>
           )}
 
-          {/* Next Choice Options */}
-          {gameState === "NEXT_CHOICE" && !isFlipping && (
-            <div className="flex-1 flex flex-col items-center justify-center h-full">
-              <h3 className="text-sm font-medium text-white/90 text-center mb-4">
-                Choose Your Next Move
-              </h3>
-              <div className="flex flex-col sm:flex-row justify-center gap-4">
-                <button
-                  onClick={() => handleNext("CASHOUT")}
-                  className="bg-[#6fc7ba] text-[#333] hover:bg-[#6fc7ba]/90 px-6 sm:px-8 py-4 sm:py-6 text-base sm:text-lg rounded-full w-full sm:w-auto"
-                >
-                  Cash Out
-                </button>
-                <button
-                  onClick={() => handleNext("CONTINUE")}
-                  className="bg-[#6fc7ba] text-[#333] hover:bg-[#6fc7ba]/90 px-6 sm:px-8 py-4 sm:py-6 text-base sm:text-lg rounded-full w-full sm:w-auto"
-                >
-                  Continue
-                </button>
+          {/* Stats Display */}
+          {sessionData && gameState !== null && gameState !== "START" ? (
+            <div className="absolute bottom-0 left-0 right-0 p-4 z-50">
+              <div className="flex items-center justify-center gap-8">
+                {/* Level */}
+                <div className="flex items-center gap-2">
+                  <span className="text-white/80 text-sm">Current Level</span>
+                  <span className="flex gap-1 items-center">
+                    <span className="text-[#6fc7ba] font-bold text-lg">
+                      {sessionData.level}
+                    </span>
+                    <span className="text-white/40 text-sm">/</span>
+                    <span className="text-white/60 text-sm">
+                      {sessionData.maxLevel}
+                    </span>
+                  </span>
+                </div>
+
+                {/* Multiplier */}
+                <div className="flex items-center gap-2">
+                  <span className="text-white/80 text-sm">Multiplier</span>
+                  <span className="text-[#6fc7ba] font-bold text-lg">
+                    {(1.96 ** (sessionData.level - 1)).toFixed(2)}x
+                  </span>
+                </div>
               </div>
             </div>
-          )}
+          ) : null}
 
           {showGameEndPopup && <GameEndPopup />}
         </div>

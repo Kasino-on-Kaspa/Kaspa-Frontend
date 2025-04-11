@@ -3,6 +3,7 @@ import Kaspa from "../../assets/Kaspa.svg";
 import useWalletStore from "@/store/walletStore";
 import { formatKAS } from "@/lib/utils";
 import useCoinflipStore from "@/store/coinflipStore";
+import { useRef } from "react";
 
 export default function CoinFlipBet({
   betAmount,
@@ -16,7 +17,13 @@ export default function CoinFlipBet({
   setBetAmount: (amount: string) => void;
 }) {
   const { onSiteBalance } = useWalletStore();
-  const { gameState } = useCoinflipStore();
+  const { gameState, flipCoin, sessionData, isBusy } = useCoinflipStore();
+  const cashoutSound = useRef(new Audio("/coin-sounds/cashout.wav"));
+
+  const handleCashout = () => {
+    cashoutSound.current.play();
+    flipCoin("CASHOUT");
+  };
 
   return (
     <div className="w-[350px] space-y-1.5 h-full  ">
@@ -120,15 +127,28 @@ export default function CoinFlipBet({
           </button>
         </div>
       </div>
-      <button
-        onClick={handleCreateBet}
-        className={`w-full bg-[#444] border border-white/10 transition-all duration-300 text-[#FFF]/80    p-3 text-xl font-bold font-Onest rounded-full ${
-          gameState !== null ? "opacity-50 cursor-not-allowed" : ""
-        } ${gameState === null ? "hover:bg-[#6fc7ba]/90" : ""}`}
-        disabled={gameState !== null}
-      >
-        {gameState !== null ? "Bet Ongoing..." : "Start the Game"}
-      </button>
+      {gameState == "CHOICE" ? (
+        <button
+          onClick={handleCashout}
+          className={`w-full bg-[#444] border border-white/10 transition-all duration-300 text-[#FFF]/80    p-3 text-xl font-bold font-Onest rounded-full ${
+            sessionData?.logs?.length === 0 || isBusy
+              ? "opacity-50 cursor-not-allowed"
+              : "hover:bg-[#6fc7ba]/90"
+          }`}
+        >
+          Cashout
+        </button>
+      ) : (
+        <button
+          onClick={handleCreateBet}
+          className={`w-full bg-[#444] border border-white/10 transition-all duration-300 text-[#FFF]/80    p-3 text-xl font-bold font-Onest rounded-full ${
+            gameState !== null ? "opacity-50 cursor-not-allowed" : ""
+          } ${gameState === null ? "hover:bg-[#6fc7ba]/90" : ""}`}
+          disabled={gameState !== null}
+        >
+          {gameState !== null ? "Bet Ongoing..." : "Start the Game"}
+        </button>
+      )}
     </div>
   );
 }

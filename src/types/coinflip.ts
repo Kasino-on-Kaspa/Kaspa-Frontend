@@ -15,7 +15,7 @@ export const enum CoinFlipServerMessage {
   GAME_ENDED = "coinflip:game_ended",
 }
 
-export type TCoinflipSessionClientGameData = "HEADS" | "TAILS";
+export type TCoinflipSessionClientGameData = "HEADS" | "TAILS" | "CASHOUT";
 
 export type TCoinflipSessionGameResult = "HEADS" | "TAILS";
 
@@ -23,12 +23,25 @@ export type TCoinflipSessionJSON = {
   sessionId: string;
   serverSeedHash: string;
   clientGameData: TCoinflipSessionClientGameData;
+  logs: TCoinflipSessionLog[];
+  level: number;
+  maxLevel: number;
+};
+export type TCoinflipSessionLog = {
+  result: TCoinflipSessionGameResult;
+  playerChoice: TCoinflipSessionClientGameData;
+  client_won: boolean;
+  level: number;
+  next: string;
 };
 
 export interface CoinflipStore {
+  gameIsEnded: boolean;
   isConnected: boolean;
   setSelectedSide: (side: TCoinflipSessionClientGameData) => void;
   selectedSide: TCoinflipSessionClientGameData | null;
+  isBusy: boolean;
+  setIsBusy: (isBusy: boolean) => void;
   flipResult: TCoinflipSessionGameResult | null;
   gameState: string | null;
   sessionData: TCoinflipSessionJSON | null;
@@ -41,7 +54,6 @@ export interface CoinflipStore {
   sessionCleanup: () => void;
   createBet: (clientSeed: string, betAmount: string) => void;
   flipCoin: (choice: TCoinflipSessionClientGameData) => void;
-  sessionNext: (option: "CASHOUT" | "CONTINUE") => void;
 }
 
 export type TCoinflipAck =

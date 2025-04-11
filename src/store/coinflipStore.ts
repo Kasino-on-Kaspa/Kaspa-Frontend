@@ -14,13 +14,19 @@ import useWalletStore from "./walletStore";
 
 const useCoinflipStore = create<CoinflipStore>((set, get) => ({
   selectedSide: null,
+  isBusy: false,
   isConnected: false,
   flipResult: null,
   sessionData: null,
   gameState: null,
+  logs: null,
   serverSeed: null,
   gameSessionError: null,
   serverSeedHash: null,
+  gameIsEnded: false,
+  setIsBusy: (isBusy: boolean) => {
+    set({ isBusy });
+  },
   setSelectedSide: (side: TCoinflipSessionClientGameData) => {
     console.log("Setting selected side:", side);
     set({ selectedSide: side });
@@ -96,6 +102,7 @@ const useCoinflipStore = create<CoinflipStore>((set, get) => ({
       coinflipSocket.on(CoinFlipServerMessage.GAME_ENDED, ({ serverSeed }) => {
         set({
           serverSeed,
+          gameIsEnded: true,
         });
         console.log("Game Ended", serverSeed);
       });
@@ -103,6 +110,7 @@ const useCoinflipStore = create<CoinflipStore>((set, get) => ({
       coinflipSocket.on(
         CoinFlipServerMessage.GAME_CHANGE_STATE,
         ({ session, new_state }) => {
+          console.log("Game State Changed", new_state);
           if (new_state === "END") {
             walletStore.refreshWalletBalance();
           }
@@ -122,6 +130,7 @@ const useCoinflipStore = create<CoinflipStore>((set, get) => ({
       serverSeed: null,
       gameSessionError: null,
       selectedSide: null,
+      gameIsEnded: false,
     });
   },
   createBet: (clientSeed: string, betAmount: string) => {
