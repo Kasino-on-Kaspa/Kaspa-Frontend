@@ -173,11 +173,63 @@ export default function CoinflipGame() {
             <h2 className="text-2xl font-bold text-white text-center">
               {reason == "CASHOUT" ? "Congratulations!" : "Game Over"}
             </h2>
-            <p className="text-sm text-white/70 text-center">
-              {reason == "CASHOUT"
-                ? "You've decided to cash out. Thanks for playing!"
-                : "Better luck next time!"}
-            </p>
+            <div className="w-full space-y-2">
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-white/60">Current Level:</span>
+                <span className="text-white/80">{sessionData?.level || 1}</span>
+              </div>
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-white/60">Current Multiplier:</span>
+                <span className="text-white/80">
+                  {(1.96 ** ((sessionData?.level || 1) - 1)).toFixed(2)}x
+                </span>
+              </div>
+              {sessionData?.logs && sessionData.logs.length > 0 && (
+                <>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-white/60">Player Choice:</span>
+                    <span className="text-white/80">
+                      {sessionData.logs[sessionData.logs.length - 1]
+                        ?.playerChoice || "N/A"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-white/60">Result:</span>
+                    <span
+                      className={`${
+                        reason === "CASHOUT"
+                          ? "text-white/80"
+                          : sessionData.logs[sessionData.logs.length - 1]
+                                ?.client_won
+                            ? "text-[#6fc7ba]"
+                            : "text-red-500"
+                      }`}
+                    >
+                      {sessionData.logs[sessionData.logs.length - 1]?.result}
+                    </span>
+                  </div>
+                  {reason === "CASHOUT" && (
+                    <div>
+                      <div className="flex  justify-between items-center space-y-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-white/60 text-sm">Payout</span>
+                        </div>
+                        <div className="text-lg font-bold text-[#6fc7ba]">
+                          {Number(betAmount) *
+                            Number(
+                              (1.96 ** ((sessionData?.level || 1) - 1)).toFixed(
+                                2,
+                              ),
+                            )}{" "}
+                          KAS
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+
             <Button
               className="bg-[#6fc7ba] text-[#333] hover:bg-[#6fc7ba]/90 px-8 py-4 text-base rounded-full mt-2"
               onClick={() => {
