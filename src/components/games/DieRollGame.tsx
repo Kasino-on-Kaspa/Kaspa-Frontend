@@ -12,6 +12,71 @@ import ProvablyFair from "./ProvablyFair";
 import BetDetailsModal from "./BetDetailsModal";
 import ManualBet from "./dicreoll/ManualBet";
 
+// CSS for custom animations - will be injected at runtime
+const customAnimations = `
+@keyframes bounceIn {
+  from, 20%, 40%, 60%, 80%, to {
+    animation-timing-function: cubic-bezier(0.215, 0.610, 0.355, 1.000);
+  }
+  0% {
+    opacity: 0;
+    transform: scale3d(0.3, 0.3, 0.3);
+  }
+  20% {
+    transform: scale3d(1.1, 1.1, 1.1);
+  }
+  40% {
+    transform: scale3d(0.9, 0.9, 0.9);
+  }
+  60% {
+    opacity: 1;
+    transform: scale3d(1.03, 1.03, 1.03);
+  }
+  80% {
+    transform: scale3d(0.97, 0.97, 0.97);
+  }
+  to {
+    opacity: 1;
+    transform: scale3d(1, 1, 1);
+  }
+}
+.animate-bounceIn {
+  animation: bounceIn 0.5s;
+}
+
+@keyframes diceRoll {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(90deg) scale(1.1);
+  }
+  50% {
+    transform: rotate(180deg) scale(0.9);
+  }
+  75% {
+    transform: rotate(270deg) scale(1.1);
+  }
+}
+.animate-diceRoll {
+  animation: diceRoll 0.8s infinite ease-in-out;
+}
+
+@keyframes instantAppear {
+  from {
+    opacity: 0.5;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.animate-instantAppear {
+  animation: instantAppear 0.2s forwards;
+}
+`;
+
 interface RollResult {
   roll: number;
   serverSeed: string;
@@ -391,6 +456,9 @@ export default function DieRollGame() {
   // Add to the state variables
   const [lastRollValue, setLastRollValue] = useState<number | null>(null);
   const [showRollAnimation, setShowRollAnimation] = useState(false);
+  const [diceAnimationPhase, setDiceAnimationPhase] = useState<
+    "initial" | "rolling" | "result"
+  >("initial");
 
   // Add state for the bet details modal
   const [selectedBet, setSelectedBet] = useState<RollHistory | null>(null);
@@ -454,17 +522,18 @@ export default function DieRollGame() {
 
     console.log("result", result);
 
-    // Set the roll value for the animation
+    // Set the roll value for the animation and immediately show result
     setLastRollValue(roll);
     setShowRollAnimation(true);
 
-    // Hide the animation after 3 seconds
-    setTimeout(() => {
-      setShowRollAnimation(false);
-    }, 3000);
+    // Immediately show result instead of waiting for animation
+    setIsRolling(false);
+    setDiceAnimationPhase("result");
+
+    // Keep the animation visible - don't hide it
+    // The animation remains visible until next roll
 
     setRollHistory((prev) => [result, ...prev]);
-    setIsRolling(false);
 
     // Update total profit for auto betting
     setTotalProfit((prev) => prev + profit);
@@ -650,6 +719,7 @@ export default function DieRollGame() {
     }
 
     setIsRolling(true);
+    setDiceAnimationPhase("rolling");
 
     // Play a random dice sound when the bet is placed
     playRandomDiceSound();
@@ -669,6 +739,7 @@ export default function DieRollGame() {
     } catch (error) {
       console.log("error", error);
       setIsRolling(false);
+      setDiceAnimationPhase("initial");
       if (isAutoBetting) {
         stopAutoBet();
       }
@@ -780,6 +851,25 @@ export default function DieRollGame() {
     const mult = calculateMultiplier();
     return (parseFloat(betAmount) * mult - parseFloat(betAmount)).toFixed(8);
   };
+
+  // Inject custom animations
+  useEffect(() => {
+    // Check if the style element already exists
+    if (!document.getElementById("dice-roll-animations")) {
+      const styleElement = document.createElement("style");
+      styleElement.id = "dice-roll-animations";
+      styleElement.textContent = customAnimations;
+      document.head.appendChild(styleElement);
+    }
+
+    return () => {
+      // Cleanup on component unmount
+      const styleElement = document.getElementById("dice-roll-animations");
+      if (styleElement) {
+        document.head.removeChild(styleElement);
+      }
+    };
+  }, []);
 
   if (!isGameInitialized) {
     return (
@@ -939,6 +1029,71 @@ export default function DieRollGame() {
             </button>
           </div>
 
+          {/* Add Roll Display to mobile view */}
+          <div className="flex items-center justify-center mb-4">
+            {isRolling || diceAnimationPhase === "rolling" ? (
+              <div className="relative flex flex-col items-center">
+                <div className="text-4xl font-bold text-[#6fc7ba] mb-2">
+                  <Icon
+                    icon="ph:dice-five-fill"
+                    className="h-16 w-16 animate-diceRoll"
+                  />
+                </div>
+                <div className="text-white/70 text-xs animate-pulse">
+                  Rolling dice...
+                </div>
+              </div>
+            ) : diceAnimationPhase === "result" && lastRollValue !== null ? (
+              <div className="relative animate-instantAppear">
+                <div
+                  className={`text-3xl font-bold relative flex items-center justify-center w-20 h-20 ${
+                    (condition === "OVER" && lastRollValue >= targetNumber) ||
+                    (condition === "UNDER" && lastRollValue <= targetNumber)
+                      ? "text-white"
+                      : "text-white"
+                  }`}
+                >
+                  <div
+                    className={`absolute inset-0 rounded-full aspect-square ${
+                      (condition === "OVER" && lastRollValue >= targetNumber) ||
+                      (condition === "UNDER" && lastRollValue <= targetNumber)
+                        ? "bg-[#6fc7ba]/80 border-2 border-[#6fc7ba]"
+                        : "bg-red-500/80 border-2 border-red-500"
+                    }`}
+                  ></div>
+                  <div className="relative z-10">{lastRollValue}</div>
+                </div>
+              </div>
+            ) : rollHistory.length > 0 ? (
+              <div className="relative">
+                <div
+                  className={`text-3xl font-bold relative flex items-center justify-center w-20 h-20 ${
+                    (rollHistory[0].condition === "OVER" &&
+                      rollHistory[0].roll >= rollHistory[0].target) ||
+                    (rollHistory[0].condition === "UNDER" &&
+                      rollHistory[0].roll <= rollHistory[0].target)
+                      ? "text-white"
+                      : "text-white"
+                  }`}
+                >
+                  <div
+                    className={`absolute inset-0 rounded-full aspect-square ${
+                      (rollHistory[0].condition === "OVER" &&
+                        rollHistory[0].roll >= rollHistory[0].target) ||
+                      (rollHistory[0].condition === "UNDER" &&
+                        rollHistory[0].roll <= rollHistory[0].target)
+                        ? "bg-[#6fc7ba]/80 border-2 border-[#6fc7ba]"
+                        : "bg-red-500/80 border-2 border-red-500"
+                    }`}
+                  ></div>
+                  <div className="relative z-10">{rollHistory[0].roll}</div>
+                </div>
+              </div>
+            ) : (
+              <div className="text-3xl font-bold text-white">?</div>
+            )}
+          </div>
+
           {/* Slider */}
           <div className="mb-4">
             <div className="relative h-16">
@@ -964,15 +1119,27 @@ export default function DieRollGame() {
                 {/* Roll Result Indicator */}
                 {showRollAnimation && lastRollValue !== null && (
                   <div
-                    className={`absolute top-1/2 -translate-y-1/2 w-6 h-6 rounded-full shadow-lg z-20 animate-pulse ${
-                      (condition === "OVER" && lastRollValue >= targetNumber) ||
-                      (condition === "UNDER" && lastRollValue <= targetNumber)
-                        ? "bg-[#6fc7ba]"
-                        : "bg-red-500"
-                    }`}
-                    style={{ left: `calc(${lastRollValue}% - 12px)` }}
+                    className="absolute z-20"
+                    style={{
+                      left: `calc(${lastRollValue}% - 8px)`,
+                      top: "-28px",
+                    }}
                   >
-                    <div className="absolute -top-7 left-1/2 -translate-x-1/2 bg-black/80 text-white text-xs py-1 px-2 rounded whitespace-nowrap">
+                    <div
+                      className={`transform translate-y-1 ${
+                        (condition === "OVER" &&
+                          lastRollValue >= targetNumber) ||
+                        (condition === "UNDER" && lastRollValue <= targetNumber)
+                          ? "text-[#6fc7ba]"
+                          : "text-red-500"
+                      }`}
+                    >
+                      <Icon
+                        icon="mdi:arrow-down-bold"
+                        className="h-8 w-8 animate-bounce"
+                      />
+                    </div>
+                    <div className="absolute -top-7 left-1/2 -translate-x-1/2  text-white text-xs py-1 px-2 rounded whitespace-nowrap">
                       {lastRollValue}
                     </div>
                   </div>
@@ -1066,14 +1233,63 @@ export default function DieRollGame() {
 
           {/* Roll Display */}
           <div className="flex-1 flex items-center justify-center">
-            {isRolling ? (
-              <div className="animate-pulse text-4xl font-bold text-[#6fc7ba]">
-                <Icon icon="ph:dice" className="h-16 w-16 animate-spin" />
+            {isRolling || diceAnimationPhase === "rolling" ? (
+              <div className="relative flex flex-col items-center">
+                <div className="text-4xl font-bold text-[#6fc7ba] mb-2">
+                  <Icon
+                    icon="ph:dice-five-fill"
+                    className="h-20 w-20 animate-diceRoll"
+                  />
+                </div>
+              </div>
+            ) : diceAnimationPhase === "result" && lastRollValue !== null ? (
+              <div className="relative animate-instantAppear">
+                <div
+                  className={`text-6xl font-bold relative flex items-center justify-center w-32 h-32 ${
+                    (condition === "OVER" && lastRollValue >= targetNumber) ||
+                    (condition === "UNDER" && lastRollValue <= targetNumber)
+                      ? "text-white"
+                      : "text-white"
+                  }`}
+                >
+                  <div
+                    className={`absolute inset-0 rounded-full aspect-square ${
+                      (condition === "OVER" && lastRollValue >= targetNumber) ||
+                      (condition === "UNDER" && lastRollValue <= targetNumber)
+                        ? "bg-[#6fc7ba]/80 "
+                        : "bg-red-500/80"
+                    }`}
+                  ></div>
+                  <div className="relative z-10">{lastRollValue}</div>
+                </div>
+              </div>
+            ) : rollHistory.length > 0 ? (
+              <div className="relative">
+                <div
+                  className={`text-6xl font-bold relative flex items-center justify-center w-32 h-32 ${
+                    (rollHistory[0].condition === "OVER" &&
+                      rollHistory[0].roll >= rollHistory[0].target) ||
+                    (rollHistory[0].condition === "UNDER" &&
+                      rollHistory[0].roll <= rollHistory[0].target)
+                      ? "text-white"
+                      : "text-white"
+                  }`}
+                >
+                  <div
+                    className={`absolute inset-0 rounded-full aspect-square ${
+                      (rollHistory[0].condition === "OVER" &&
+                        rollHistory[0].roll >= rollHistory[0].target) ||
+                      (rollHistory[0].condition === "UNDER" &&
+                        rollHistory[0].roll <= rollHistory[0].target)
+                        ? "bg-[#6fc7ba]/80 border-2 border-[#6fc7ba]"
+                        : "bg-red-500/80 border-2 border-red-500"
+                    }`}
+                  ></div>
+                  <div className="relative z-10">{rollHistory[0].roll}</div>
+                </div>
               </div>
             ) : (
-              <div className="text-6xl font-bold text-white">
-                {rollHistory?.[0]?.roll?.toString() ?? "?"}
-              </div>
+              <div className="text-6xl font-bold text-white">?</div>
             )}
           </div>
 
@@ -1103,15 +1319,27 @@ export default function DieRollGame() {
                 {/* Roll Result Indicator */}
                 {showRollAnimation && lastRollValue !== null && (
                   <div
-                    className={`absolute top-1/2 -translate-y-1/2 w-8 h-8 rounded-full shadow-lg z-20 animate-pulse ${
-                      (condition === "OVER" && lastRollValue >= targetNumber) ||
-                      (condition === "UNDER" && lastRollValue <= targetNumber)
-                        ? "bg-[#6fc7ba]"
-                        : "bg-red-500"
-                    }`}
-                    style={{ left: `calc(${lastRollValue}% - 16px)` }}
+                    className="absolute z-20"
+                    style={{
+                      left: `calc(${lastRollValue}% - 8px)`,
+                      top: "-28px",
+                    }}
                   >
-                    <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black/80 text-white text-xs py-1 px-2 rounded whitespace-nowrap">
+                    <div
+                      className={`transform translate-y-1 ${
+                        (condition === "OVER" &&
+                          lastRollValue >= targetNumber) ||
+                        (condition === "UNDER" && lastRollValue <= targetNumber)
+                          ? "text-[#6fc7ba]"
+                          : "text-red-500"
+                      }`}
+                    >
+                      <Icon
+                        icon="mdi:arrow-down-bold"
+                        className="h-8 w-8 animate-bounce"
+                      />
+                    </div>
+                    <div className="absolute -top-7 left-1/2 -translate-x-1/2 bg-black/20 text-white text-xs py-1 px-2 rounded whitespace-nowrap">
                       {lastRollValue}
                     </div>
                   </div>
