@@ -201,6 +201,7 @@ const useWalletStore = create<WalletState>((set, get) => ({
 
     try {
       const existingTokens = getStoredTokens();
+
       console.log("Existing tokens:", existingTokens);
       if (existingTokens?.accessToken && existingTokens?.refreshToken) {
         set({
