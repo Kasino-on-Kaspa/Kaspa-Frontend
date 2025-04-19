@@ -7,6 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Icon } from "@iconify/react";
 import { motion } from "framer-motion";
+import { useQuery } from "@tanstack/react-query";
+import { formatKAS } from "@/lib/utils";
 import {
   Coins,
   Users,
@@ -46,6 +48,19 @@ const referralsData = [
   { month: "Jun", referrals: 25 },
 ];
 
+const fetchReferralStats = async (referralCode: string) => {
+  const response = await fetch(
+    `/api/referral/stats?referralCode=${encodeURIComponent(referralCode)}`,
+    {
+      credentials: "include",
+    },
+  );
+  if (!response.ok) {
+    throw new Error("Failed to fetch referral stats");
+  }
+  return response.json();
+};
+
 export default function ReferralPage() {
   const { isAuthenticated } = useWalletStore();
   const {
@@ -53,6 +68,12 @@ export default function ReferralPage() {
     isLoading: isUserDataLoading,
     refetch,
   } = useUserData();
+
+  const { data: referralStats, isLoading: isStatsLoading } = useQuery({
+    queryKey: ["referralStats", userData?.referralCode],
+    queryFn: () => fetchReferralStats(userData?.referralCode || ""),
+    enabled: !!userData?.referralCode,
+  });
 
   const { mutateAsync: updateReferredBy } = useUpdateReferredBy();
   const [referralCode, setReferralCode] = useState("");
@@ -181,7 +202,9 @@ export default function ReferralPage() {
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold text-white">
-                      {userData?.totalEarnings || 0} KAS
+                      {isStatsLoading
+                        ? "Loading..."
+                        : `${formatKAS(BigInt(referralStats?.totalEarnings || "0"))} KAS`}
                     </div>
                     <div className="flex items-center text-xs text-[#6fc7ba] mt-1">
                       <TrendingUp className="w-4 h-4 mr-1" />
@@ -202,7 +225,9 @@ export default function ReferralPage() {
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold text-white">
-                      {userData?.referralCount || 0}
+                      {isStatsLoading
+                        ? "Loading..."
+                        : referralStats?.totalReferrals || 0}
                     </div>
                     <div className="flex items-center text-xs text-[#6fc7ba] mt-1">
                       <ArrowUpRight className="w-4 h-4 mr-1" />
@@ -214,7 +239,7 @@ export default function ReferralPage() {
                 <Card className="bg-[#1a1718]/50 backdrop-blur-sm border-white/5">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium text-white">
-                      Commission Rate
+                      Win Earnings
                     </CardTitle>
                     <Icon
                       icon="mdi:percent"
@@ -222,9 +247,13 @@ export default function ReferralPage() {
                     />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold text-white">5%</div>
+                    <div className="text-2xl font-bold text-white">
+                      {isStatsLoading
+                        ? "Loading..."
+                        : `${formatKAS(BigInt(referralStats?.winEarnings || "0"))} KAS`}
+                    </div>
                     <div className="flex items-center text-xs text-[#6fc7ba] mt-1">
-                      <span>On all referred losses</span>
+                      <span>From referred wins</span>
                     </div>
                   </CardContent>
                 </Card>
@@ -232,7 +261,7 @@ export default function ReferralPage() {
                 <Card className="bg-[#1a1718]/50 backdrop-blur-sm border-white/5">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium text-white">
-                      Monthly Growth
+                      Loss Earnings
                     </CardTitle>
                     <Icon
                       icon="mdi:chart-line"
@@ -240,10 +269,13 @@ export default function ReferralPage() {
                     />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold text-white">+8.2%</div>
+                    <div className="text-2xl font-bold text-white">
+                      {isStatsLoading
+                        ? "Loading..."
+                        : `${formatKAS(BigInt(referralStats?.loseEarnings || "0"))} KAS`}
+                    </div>
                     <div className="flex items-center text-xs text-[#6fc7ba] mt-1">
-                      <ArrowUpRight className="w-4 h-4 mr-1" />
-                      <span>Compared to last month</span>
+                      <span>From referred losses</span>
                     </div>
                   </CardContent>
                 </Card>

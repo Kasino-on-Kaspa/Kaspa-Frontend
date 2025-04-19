@@ -5,6 +5,33 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@iconify/react";
+import { useQuery } from "@tanstack/react-query";
+import { formatKAS } from "@/lib/utils";
+
+interface ReferralStats {
+  totalReferrals: number;
+  totalEarnings: string;
+  winEarnings: string;
+  loseEarnings: string;
+}
+
+const fetchReferralStats = async (
+  referralCode: string,
+): Promise<ReferralStats> => {
+  const response = await fetch(
+    `/api/referral/stats?referralCode=${encodeURIComponent(referralCode)}`,
+    {
+      credentials: "include",
+    },
+  );
+  if (!response.ok) {
+    throw new Error("Failed to fetch referral stats");
+  }
+
+  const data = await response.json();
+  console.log(data);
+  return data;
+};
 
 export default function AffiliatePage() {
   const {
@@ -15,6 +42,12 @@ export default function AffiliatePage() {
   const { mutateAsync: updateReferredBy } = useUpdateReferredBy();
   const [referralCode, setReferralCode] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  const { data: referralStats, isLoading: isStatsLoading } = useQuery({
+    queryKey: ["referralStats", userData?.referralCode],
+    queryFn: () => fetchReferralStats(userData?.referralCode || ""),
+    enabled: !!userData?.referralCode,
+  });
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -82,6 +115,57 @@ export default function AffiliatePage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Referral Stats Section */}
+      {userData?.referralCode && (
+        <Card className="bg-[#1a1718]/50 backdrop-blur-sm border-white/5">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-white">
+              <Icon icon="mdi:chart-line" className="h-5 w-5 text-[#6fc7ba]" />
+              Your Referral Stats
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {isStatsLoading ? (
+              <div className="flex items-center justify-center h-10">
+                <Icon
+                  icon="mdi:loading"
+                  className="h-5 w-5 animate-spin text-[#6fc7ba]"
+                />
+              </div>
+            ) : referralStats ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <p className="text-white/70">Total Referrals</p>
+                  <p className="text-2xl font-bold text-white">
+                    {referralStats.totalReferrals}
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-white/70">Total Earnings</p>
+                  <p className="text-2xl font-bold text-white">
+                    {formatKAS(BigInt(referralStats.totalEarnings))} KAS
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-white/70">Win Earnings</p>
+                  <p className="text-2xl font-bold text-[#6fc7ba]">
+                    {formatKAS(BigInt(referralStats.winEarnings))} KAS
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-white/70">Loss Earnings</p>
+                  <p className="text-2xl font-bold text-[#6fc7ba]">
+                    {formatKAS(BigInt(referralStats.loseEarnings))} KAS
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="text-white/70">No stats available</div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Enter Referral Code Section */}
       <Card className="bg-[#1a1718]/50 backdrop-blur-sm border-white/5">
