@@ -260,11 +260,11 @@ export default function ReferralPage() {
                     </CardHeader>
                     <CardContent>
                       <div className="text-2xl font-bold text-white">
-                        {userData?.referralCount || 0}
+                        {referralStats?.totalReferrals || 0}
                       </div>
                       <div className="flex items-center text-xs text-[#6fc7ba] mt-1">
                         <ArrowUpRight className="w-4 h-4 mr-1" />
-                        <span>+5 new this month</span>
+                        <span>Total referrals</span>
                       </div>
                     </CardContent>
                   </Card>
@@ -280,9 +280,11 @@ export default function ReferralPage() {
                       />
                     </CardHeader>
                     <CardContent>
-                      <div className="text-2xl font-bold text-white">5%</div>
+                      <div className="text-2xl font-bold text-white">
+                        {formatKAS(referralStats?.totalEarnings || 0n)} KAS
+                      </div>
                       <div className="flex items-center text-xs text-[#6fc7ba] mt-1">
-                        <span>On all referred losses</span>
+                        <span>Total earnings</span>
                       </div>
                     </CardContent>
                   </Card>
