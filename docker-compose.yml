@@ -1,0 +1,7 @@
+version: '3.8'
+services:
+  app:
+    image: ghcr.io/kasino-on-kaspa/kasino-frontend:latest
+    ports:
+      - "80:80"
+    restart: unless-stopped
