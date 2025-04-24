@@ -260,7 +260,11 @@ export default function ReferralPage() {
                     </CardHeader>
                     <CardContent>
                       <div className="text-2xl font-bold text-white">
-                        {referralStats?.totalReferrals || 0}
+                        {isStatsLoading ? (
+                          <div className="h-8 w-16 bg-white/10 animate-pulse rounded" />
+                        ) : (
+                          referralStats?.totalReferrals || 0
+                        )}
                       </div>
                       <div className="flex items-center text-xs text-[#6fc7ba] mt-1">
                         <ArrowUpRight className="w-4 h-4 mr-1" />
@@ -281,7 +285,11 @@ export default function ReferralPage() {
                     </CardHeader>
                     <CardContent>
                       <div className="text-2xl font-bold text-white">
-                        {formatKAS(referralStats?.totalEarnings || 0n)} KAS
+                        {isStatsLoading ? (
+                          <div className="h-8 w-24 bg-white/10 animate-pulse rounded" />
+                        ) : (
+                          `${formatKAS(referralStats?.totalEarnings || 0n)} KAS`
+                        )}
                       </div>
                       <div className="flex items-center text-xs text-[#6fc7ba] mt-1">
                         <span>Total earnings</span>
