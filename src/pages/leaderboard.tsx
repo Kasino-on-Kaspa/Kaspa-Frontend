@@ -60,6 +60,21 @@ export default function LeaderboardPage() {
       : a.wonAmountRank - b.wonAmountRank,
   );
 
+  if (!sortedLeaderboard || sortedLeaderboard.length === 0) {
+    return (
+      <div className="h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-4xl md:text-7xl font-bold font-Onest tracking-tight text-center mb-2 text-[#6fc7ba]">
+            OOPS!
+          </p>
+          <p className="text-center text-gray-400 mb-8 font-DM-Sans font-extralight text-sm md:text-base px-4">
+            It seems you are the first player to play in our casino ☺️
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="container max-w-4xl mx-auto px-4 py-8">
       <h1 className="text-4xl md:text-5xl font-bold font-Onest tracking-tight text-center mb-2 text-[#6fc7ba]">
@@ -80,7 +95,7 @@ export default function LeaderboardPage() {
         <span className="text-sm text-white/70 font-DM-Sans">Total Wins</span>
       </div>
 
-      {isLoading ? (
+      {isLoading || !sortedLeaderboard ? (
         <div className="flex items-center justify-center h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#6fc7ba]"></div>
         </div>
