@@ -8,6 +8,7 @@ import {
 import { io } from "socket.io-client";
 import { create } from "zustand";
 import useWalletStore from "./walletStore";
+import { toast } from "sonner";
 
 const DEFAULT_CONFIG: SocketConfig = {
   reconnectionAttempts: 5,
@@ -147,6 +148,7 @@ const useSocketStore = create<SocketState>((set, get) => ({
           reconnectAttempts: state.reconnectAttempts + 1,
         }));
         console.error("Socket connection error:", error);
+        toast.error("Failed to connect to socket");
       });
 
       socket.on("disconnecting", () => {

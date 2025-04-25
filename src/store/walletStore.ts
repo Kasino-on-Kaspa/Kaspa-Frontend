@@ -5,7 +5,12 @@ import {
   KaspaWallet,
   OnBalanceChanged,
 } from "@/types/kaspa";
-import { setAuthTokens, getStoredTokens, clearTokens } from "@/lib/auth";
+import {
+  setAuthTokens,
+  getStoredTokens,
+  clearTokens,
+  AuthTokens,
+} from "@/lib/auth";
 import { getMessageForSigning } from "@/lib/walletQueries";
 import useSocketStore from "./socketStore";
 import { HandshakeResponse } from "@/types/socket";
@@ -119,48 +124,48 @@ const useWalletStore = create<WalletState>((set, get) => ({
     });
   },
   checkAuthExpiry: async () => {
-    const { authExpiry } = get();
-    if (authExpiry && Date.now() / 1000 >= authExpiry) {
-      try {
-        const tokens = getStoredTokens();
-        if (!tokens?.refreshToken) {
-          throw new Error("No refresh token available");
-        }
+    try {
+      const tokens = getStoredTokens();
+      console.log("Tokens:", tokens);
 
-        const response = await fetch(
-          `${import.meta.env.VITE_BACKEND_URL}/auth/refresh`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ refreshToken: tokens.refreshToken }),
-          },
-        );
-
-        if (!response.ok) {
-          throw new Error("Failed to refresh token");
-        }
-
-        const data = await response.json();
-        setAuthTokens({
-          accessToken: data.accessToken,
-          refreshToken: data.refreshToken,
-        });
-
-        // Update expiry time
-        set({
-          authError: null,
-          authExpiry: data.expiry,
-        });
-      } catch (error) {
-        console.error("Token refresh failed:", error);
-        clearTokens();
-        set({
-          isAuthenticated: false,
-          authExpiry: null,
-          authError: "Authentication expired",
-          userData: null,
-        });
+      if (!tokens?.refreshToken) {
+        throw new Error("No refresh token available");
       }
+
+      const response = await fetch(
+        `${import.meta.env.VITE_BACKEND_URL}/auth/refresh`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ refreshToken: tokens.refreshToken }),
+        },
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to refresh token");
+      }
+
+      const data = await response.json();
+      setAuthTokens({
+        accessToken: data.accessToken,
+        refreshToken: data.refreshToken,
+      });
+
+      // Update expiry time
+      set({
+        authError: null,
+        authExpiry: data.expiry,
+      });
+    } catch (error) {
+      console.error("Token refresh failed:", error);
+      clearTokens();
+      set({
+        isAuthenticated: false,
+        authExpiry: null,
+        authError: "Authentication expired",
+        userData: null,
+      });
+      get().authenticate();
     }
   },
   initWallet: async (wallet) => {
@@ -202,12 +207,20 @@ const useWalletStore = create<WalletState>((set, get) => ({
     try {
       const existingTokens = getStoredTokens();
 
-      console.log("Existing tokens:", existingTokens);
-      if (existingTokens?.accessToken && existingTokens?.refreshToken) {
+      if (
+        existingTokens &&
+        Object.keys(existingTokens).every((authFactor: string) => {
+          return !!existingTokens[authFactor as keyof AuthTokens];
+        })
+      ) {
+        console.log("Existing tokens:", existingTokens);
         set({
           isAuthenticated: true,
           authError: null,
         });
+
+        get().checkAuthExpiry();
+
         return;
       }
 
@@ -245,27 +258,6 @@ const useWalletStore = create<WalletState>((set, get) => ({
 
       wallet?.on("balanceChanged", get().handleBalanceChanged);
 
-      // const walletData = await authenticatedFetch(
-      //   `${import.meta.env.VITE_BACKEND_URL}/wallet/deposit`,
-      //   {
-      //     method: "POST",
-      //     headers: { "Content-Type": "application/json" },
-      //     body: JSON.stringify({ wallet_id: authData?.user.depositAddress }),
-      //   }
-      // );
-
-      // const walletDataJson = await walletData.json();
-
-      // set({
-      //   isAuthenticated: true,
-      //   authError: null,
-      //   authExpiry: expiry,
-      //   onSiteBalance: {
-      //     address: walletDataJson.address,
-      //     balance: walletDataJson.balance || 0,
-      //   },
-      // });
-
       const storedTokens = getStoredTokens();
 
       if (storedTokens?.accessToken && storedTokens?.refreshToken) {
@@ -282,15 +274,9 @@ const useWalletStore = create<WalletState>((set, get) => ({
         });
       }
 
-      const checkInterval = setInterval(() => {
-        get().checkAuthExpiry();
-        if (!get().isAuthenticated) {
-          clearInterval(checkInterval);
-        }
-      }, 1000);
+      get().refreshWalletBalance();
     } catch (error) {
       console.error("Authentication error:", error);
-      clearTokens();
       set({
         isAuthenticated: false,
         authError:
