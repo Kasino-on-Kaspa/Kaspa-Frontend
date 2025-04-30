@@ -8,6 +8,7 @@ import {
 import { io } from "socket.io-client";
 import { create } from "zustand";
 import useWalletStore from "./walletStore";
+import useLogStore from "./logStore";
 import { toast } from "sonner";
 
 const DEFAULT_CONFIG: SocketConfig = {
@@ -72,6 +73,9 @@ const useSocketStore = create<SocketState>((set, get) => ({
     const { socket, config, reconnectAttempts } = get();
     if (!socket) return;
 
+    // Remove all event listeners before reconnecting
+    socket.removeAllListeners();
+
     if (reconnectAttempts >= config.reconnectionAttempts) {
       set({
         connectionError: "Maximum reconnection attempts reached",
@@ -109,6 +113,13 @@ const useSocketStore = create<SocketState>((set, get) => ({
 
     set({ isConnecting: true, connectionError: null });
 
+    // Clean up existing socket if any
+    const existingSocket = get().socket;
+    if (existingSocket) {
+      existingSocket.removeAllListeners();
+      existingSocket.disconnect();
+    }
+
     const socket = io(import.meta.env.VITE_SOCKET_URL, {
       auth: {
         token: authTokens.accessToken,
@@ -116,6 +127,7 @@ const useSocketStore = create<SocketState>((set, get) => ({
       transports: ["websocket", "polling"],
       autoConnect: false,
       reconnection: true,
+      forceNew: true, // Force a new connection
       ...config,
     });
 
@@ -172,6 +184,14 @@ const useSocketStore = create<SocketState>((set, get) => ({
           isConnecting: false,
         });
       });
+
+      // Only register log:new event if it's not already registered
+      if (!socket.hasListeners("log:new")) {
+        socket.on("log:new", (data) => {
+          console.log("Received log:new event");
+          useLogStore.getState().addLog(data);
+        });
+      }
     }
 
     set({ socket });
@@ -193,6 +213,8 @@ const useSocketStore = create<SocketState>((set, get) => ({
   disconnect: () => {
     const socket = get().socket;
     if (socket) {
+      // Remove all event listeners
+      socket.removeAllListeners();
       socket.disconnect();
       get().cleanup();
     }
@@ -202,16 +224,25 @@ const useSocketStore = create<SocketState>((set, get) => ({
     const socket = get().socket;
     if (!socket) return;
 
-    // Remove all event listeners
+    // First remove all registered event handlers
     Object.keys(get().eventHandlers).forEach((event) => {
       socket.off(event as keyof ServerToClientEvents);
     });
 
+    // Then remove all listeners including internal ones
+    socket.removeAllListeners();
+
+    // Close the socket connection
+    socket.close();
+
+    // Reset the store state
     set({
       socket: null,
       ...INITIAL_CONNECTION_STATE,
       eventHandlers: {},
     });
+
+    console.log("Socket cleanup completed");
   },
 }));
 

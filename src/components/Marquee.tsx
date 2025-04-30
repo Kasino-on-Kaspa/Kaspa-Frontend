@@ -1,58 +1,29 @@
 "use client";
 
-import { useState } from "react";
 import { Icon } from "@iconify/react";
 import { motion } from "framer-motion";
+import useLogStore from "@/store/logStore";
+import { formatAddress, formatKAS } from "@/lib/utils";
 
-interface WinningData {
-  username: string;
-  amount: number;
-  game: string;
-  time: string;
-  multiplier: number;
-  betAmount: number;
-  currency: string;
+function formatTimeAgo(timestamp: number): string {
+  const seconds = Math.floor((Date.now() - timestamp) / 1000);
+  if (seconds < 60) return "just now";
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  return `${Math.floor(hours / 24)}d ago`;
 }
 
 export default function Marquee() {
-  const [winnings, _] = useState<WinningData[]>([
-    {
-      username: "Player123",
-      amount: 1500,
-      betAmount: 50,
-      multiplier: 30,
-      game: "Coin Flip",
-      time: "2m ago",
-      currency: "KAS",
-    },
-    {
-      username: "LuckyWinner",
-      amount: 2800,
-      betAmount: 40,
-      multiplier: 70,
-      game: "Dice Roll",
-      time: "5m ago",
-      currency: "KAS",
-    },
-    {
-      username: "CryptoKing",
-      amount: 5000,
-      betAmount: 100,
-      multiplier: 50,
-      game: "Coin Flip",
-      time: "8m ago",
-      currency: "KAS",
-    },
-    {
-      username: "Dicemaster",
-      amount: 1800,
-      betAmount: 30,
-      multiplier: 60,
-      game: "Dice Roll",
-      time: "12m ago",
-      currency: "KAS",
-    },
-  ]);
+  const logs = useLogStore((state) => state.logs);
+
+  // Only show winning logs
+  const winningLogs = logs
+    .filter((log) => parseFloat(log.payout) > parseFloat(log.bet))
+    .slice(0, 10); // Show last 10 wins
+
+  if (winningLogs.length === 0) return null;
 
   return (
     <div className="bg-[#222] border-b border-white/10 fixed top-0 w-full right-0 z-50">
@@ -63,34 +34,43 @@ export default function Marquee() {
             x: ["100%", "-100%"],
           }}
           transition={{
-            duration: 30,
+            duration: 50,
             ease: "linear",
             repeat: Infinity,
           }}
         >
-          {winnings.map((win, index) => (
-            <span
-              key={index}
-              className="mx-4 text-[10px] md:text-xs font-medium space-x-1"
-            >
-              <Icon
-                icon="ph:coin-fill"
-                className="inline-block mr-1 text-[#6fc7ba]"
-              />
-              <span className="text-white/90">{win.username}</span> won{" "}
-              <span className="text-[#6fc7ba]">
-                {win.amount.toLocaleString()} {win.currency}
-              </span>{" "}
-              <span className="text-white/50">
-                ({win.multiplier}x - ${win.betAmount.toLocaleString()})
-              </span>{" "}
-              on <span className="text-white/90">{win.game}</span>{" "}
-              <span className="text-white/50 text-[9px] md:text-[10px]">
-                {win.time}
+          {winningLogs.map((log, index) => {
+            const payout = parseFloat(log.payout);
+            const bet = parseFloat(log.bet);
+            const multiplier = payout / bet;
+
+            return (
+              <span
+                key={index}
+                className="mx-4 text-[10px] md:text-xs font-medium space-x-1"
+              >
+                <Icon
+                  icon="ph:coin-fill"
+                  className="inline-block mr-1 text-[#6fc7ba]"
+                />
+                <span className="text-white/90">
+                  {formatAddress(log.username)}
+                </span>{" "}
+                won{" "}
+                <span className="text-[#6fc7ba]">
+                  {formatKAS(BigInt(payout))} KAS
+                </span>{" "}
+                <span className="text-white/50">
+                  ({multiplier.toFixed(2)}x - {formatKAS(BigInt(bet))} KAS)
+                </span>{" "}
+                on <span className="text-white/90">{log.game || "Game"}</span>{" "}
+                <span className="text-white/50 text-[9px] md:text-[10px]">
+                  {formatTimeAgo(log.timestamp)}
+                </span>
+                <span className="mx-2 text-white/20">•</span>
               </span>
-              <span className="mx-2 text-white/20">•</span>
-            </span>
-          ))}
+            );
+          })}
         </motion.div>
       </div>
     </div>
