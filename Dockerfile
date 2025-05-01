@@ -14,14 +14,24 @@ ENV VITE_BACKEND_URL=$VITE_BACKEND_URL
 ENV VITE_SOCKET_URL=$VITE_SOCKET_URL
 ENV NODE_ENV=$NODE_ENV
 
-# Install dependencies first (better layer caching)
-COPY package*.json ./
-ENV HUSKY=0
-RUN npm install --ignore-scripts
+# Enable Corepack to manage pnpm
+RUN corepack enable
 
-# Copy source and build
+# Install dependencies first (better layer caching)
+COPY package*.json pnpm-lock.yaml ./
+ENV HUSKY=0
+
+# Install all dependencies including dev dependencies needed for build
+RUN pnpm install --frozen-lockfile --ignore-scripts
+
+# Build the application
 COPY . .
-RUN npm run build
+RUN pnpm run build
+
+# Clean up dev dependencies
+RUN pnpm install --frozen-lockfile --prod --ignore-scripts
+
+
 
 FROM nginx:latest
 COPY --from=builder /app/dist /usr/share/nginx/html
