@@ -105,6 +105,12 @@ export interface ServerToClientEvents {
   "wallet:balance": (data: { balance: string; address: string }) => void;
   "account:handshake": (data: HandshakeResponse) => void;
   "wallet:update": (data: { balance: string }) => void;
+  "log:new": (data: {
+    username: string;
+    result: string;
+    bet: string;
+    payout: string;
+  }) => void;
   // Coinflip events
   [CoinFlipServerMessage.GAME_CHANGE_STATE]: ({
     session,
