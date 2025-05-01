@@ -16,7 +16,8 @@ ENV NODE_ENV=$NODE_ENV
 
 # Install dependencies first (better layer caching)
 COPY package*.json ./
-RUN npm install
+ENV HUSKY=0
+RUN npm install --ignore-scripts
 
 # Copy source and build
 COPY . .
