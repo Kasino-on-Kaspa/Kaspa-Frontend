@@ -16,9 +16,10 @@ ENV NODE_ENV=$NODE_ENV
 
 # Install dependencies first (better layer caching)
 COPY package*.json ./
-RUN apk add --no-cache python3 make g++ \
-    && npm install \
-    && apk del python3 make g++
+RUN apk update && \
+    apk add --no-cache python3 make g++ gcc && \
+    npm install && \
+    apk del python3 make g++ gcc
 
 # Copy source and build
 COPY . .
