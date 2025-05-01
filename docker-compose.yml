@@ -1,14 +1,7 @@
 version: '3.8'
 services:
   app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        - VITE_CMC_API_KEY=${VITE_CMC_API_KEY}
-        - VITE_BACKEND_URL=${VITE_BACKEND_URL}
-        - NODE_ENV=production
-    image: ghcr.io/kasino-on-kaspa/kasino-frontend:latest
+    image: ghcr.io/kasino-on-kaspa/kaspa-frontend:latest
     ports:
       - "80:80"
     restart: unless-stopped
@@ -16,3 +9,4 @@ services:
       - NODE_ENV=production
       - VITE_CMC_API_KEY=${VITE_CMC_API_KEY}
       - VITE_BACKEND_URL=${VITE_BACKEND_URL}
+      - VITE_SOCKET_URL=${VITE_BACKEND_URL}
