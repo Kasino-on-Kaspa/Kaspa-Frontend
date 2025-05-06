@@ -2,15 +2,18 @@ version: '3.8'
 
 services:
   frontend:
-    image: ghcr.io/kasino-on-kaspa/kaspa-frontend:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
     ports:
       - "8080:80"
     restart: unless-stopped
     environment:
       - NODE_ENV=production
       - VITE_CMC_API_KEY=${VITE_CMC_API_KEY}
-      - VITE_BACKEND_URL=/
+      - VITE_BACKEND_URL=/api
       - VITE_SOCKET_URL=/socket.io
+      - VITE_API_TIMEOUT=30000
     depends_on:
       - backend
     networks:
@@ -23,12 +26,12 @@ services:
       - "3000:3000"
     environment:
       - NODE_ENV=development
-      - CORS_ORIGIN=http://localhost:8080
+      - CORS_ORIGIN=http://kasino.city
       - POSTGRES_HOST=db
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=kaspa_kasino
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/kaspa_kasino?sslmode=disable
+      - DATABASE_URL=postgresql://neondb_owner:npg_xs20KTlvFJDO@ep-white-king-a10probp-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require
       - PGSSLMODE=disable
       - JWT_SECRET=your_secret_key_here
       - JWT_EXPIRY=7d

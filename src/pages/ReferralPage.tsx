@@ -80,6 +80,8 @@ export default function ReferralPage() {
     refetch,
   } = useUserData();
 
+  console.log(userData);
+
   const { data: referralStats, isLoading: isStatsLoading } = useQuery({
     queryKey: ["referralStats", userData?.referralCode],
     queryFn: () => fetchReferralStats(userData?.referralCode || ""),
