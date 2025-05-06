@@ -46,8 +46,12 @@ export default function LeaderboardPage() {
       const { data } = await axios.get<LeaderboardEntry[]>(
         `${import.meta.env.VITE_BACKEND_URL}/leaderboard`,
       );
-      console.log(data);
-      return data;
+      // Transform the data to ensure proper bigint handling
+      return data.map((entry) => ({
+        ...entry,
+        totalWonAmount: BigInt(entry.totalWonAmount.toString()),
+        totalBetAmount: BigInt(entry.totalBetAmount.toString()),
+      }));
     },
     refetchInterval: 30000, // Refresh every 30 seconds
   });
@@ -77,11 +81,16 @@ export default function LeaderboardPage() {
     );
   }
 
-  const sortedLeaderboard = leaderboard?.sort((a, b) =>
-    sortBy === "bet"
-      ? a.betAmountRank - b.betAmountRank
-      : a.wonAmountRank - b.wonAmountRank,
-  );
+  const sortedLeaderboard = leaderboard
+    ? [...leaderboard]
+        .sort((a, b) => {
+          if (sortBy === "bet") {
+            return a.betAmountRank - b.betAmountRank;
+          }
+          return a.wonAmountRank - b.wonAmountRank;
+        })
+        .filter((entry) => entry.betAmountRank > 0 || entry.wonAmountRank > 0)
+    : undefined;
 
   return (
     <div className="container max-w-4xl mx-auto px-4 py-8">

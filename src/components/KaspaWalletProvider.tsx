@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { KaspaWallet } from "@/types/kaspa";
-import { KaspaWalletContext } from "../context/KaspaWalletContext";
+import { KaspaWalletContext } from "./context/KaspaWalletContext";
 
 export default function KaspaWalletProvider({
   children,

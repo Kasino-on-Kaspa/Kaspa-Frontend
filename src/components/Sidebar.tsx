@@ -30,7 +30,7 @@ const navLinks = [
     label: "About",
   },
   {
-    href: "/leaderboard",
+    href: "/stats",
     icon: "ph:trophy-fill",
     label: "Leaderboard",
   },
