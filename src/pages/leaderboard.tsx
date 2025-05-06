@@ -54,7 +54,15 @@ export default function LeaderboardPage() {
 
   console.log(leaderboard, isLoading);
 
-  if (!sortedLeaderboard || sortedLeaderboard.length === 0) {
+  if (isLoading) {
+    return (
+      <div className="h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#6fc7ba]"></div>
+      </div>
+    );
+  }
+
+  if (!leaderboard) {
     return (
       <div className="h-screen flex items-center justify-center">
         <div className="text-center">
