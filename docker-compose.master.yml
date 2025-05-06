@@ -2,11 +2,9 @@ version: '3.8'
 
 services:
   frontend:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: ghcr.io/kasino-on-kaspa/kaspa-frontend:latest
     ports:
-      - "80:80"
+      - "8080:80"
     restart: unless-stopped
     environment:
       - NODE_ENV=production
@@ -49,14 +47,19 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
-    volumes:
-      - ../Kaspa-Backend/start.sh:/app/start.sh
     command: >
       sh -c "
+      set -e &&
       apt-get update && 
-      apt-get install -y netcat-openbsd postgresql-client && 
-      chmod +x /app/start.sh && 
-      /app/start.sh
+      apt-get install -y netcat-openbsd postgresql-client &&
+      while ! nc -z db 5432; do sleep 1; done &&
+      PGPASSWORD=postgres psql -h db -U postgres -c 'DROP DATABASE IF EXISTS kaspa_kasino;' &&
+      PGPASSWORD=postgres psql -h db -U postgres -c 'CREATE DATABASE kaspa_kasino;' &&
+      pnpm config set store-dir /app/.pnpm-store &&
+      pnpm install &&
+      pnpm drizzle-kit generate &&
+      pnpm drizzle-kit push &&
+      pnpm run dev
       "
 
   db:

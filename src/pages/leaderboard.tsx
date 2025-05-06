@@ -54,12 +54,6 @@ export default function LeaderboardPage() {
 
   console.log(leaderboard, isLoading);
 
-  const sortedLeaderboard = leaderboard?.sort((a, b) =>
-    sortBy === "bet"
-      ? a.betAmountRank - b.betAmountRank
-      : a.wonAmountRank - b.wonAmountRank,
-  );
-
   if (!sortedLeaderboard || sortedLeaderboard.length === 0) {
     return (
       <div className="h-screen flex items-center justify-center">
@@ -74,6 +68,12 @@ export default function LeaderboardPage() {
       </div>
     );
   }
+
+  const sortedLeaderboard = leaderboard?.sort((a, b) =>
+    sortBy === "bet"
+      ? a.betAmountRank - b.betAmountRank
+      : a.wonAmountRank - b.wonAmountRank,
+  );
 
   return (
     <div className="container max-w-4xl mx-auto px-4 py-8">

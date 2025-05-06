@@ -16,7 +16,8 @@ export const highWinColumns: ColumnDef<HighWin>[] = [
   },
   {
     header: "Payout",
-    accessorKey: "payout",
+    accessorKey:
+      "payoutgit clone https://github.com/LazyVim/starter ~/.config/nvim",
   },
   {
     header: "Wager",
