@@ -1,20 +1,6 @@
 import DieRollGame from "@/components/games/DieRollGame";
-import GameStats from "@/components/GameStats";
 import { Icon } from "@iconify/react/dist/iconify.js";
 export default function DiceRollPage() {
-  const gameData = {
-    totalBets: 203456,
-    totalVolume: 3456789,
-    averageBet: 16.99,
-    maxWin: 2000,
-    winRate: 47.2,
-    hourlyData: Array.from({ length: 24 }, (_, i) => ({
-      hour: `${i}:00`,
-      bets: Math.floor(Math.random() * 1200) + 600,
-      volume: Math.floor(Math.random() * 12000) + 6000,
-    })),
-  };
-
   return (
     <main className="p-2 md:p-5 f_Onest">
       <div className="w-full h-[600px] md:h-[700px] bg-[#333] rounded-3xl">
@@ -75,7 +61,7 @@ export default function DiceRollPage() {
             number between 1 and 6.
           </p>
         </div>
-        <GameStats gameData={gameData} />
+        {/* <GameStats gameData={gameData} /> */}
       </div>
     </main>
   );

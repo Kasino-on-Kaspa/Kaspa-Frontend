@@ -1,22 +1,8 @@
 import CoinflipGame from "@/components/games/CoinflipGame";
-import GameStats from "@/components/GameStats";
 import GameDescription from "@/components/GameDescription";
 import { Icon } from "@iconify/react/dist/iconify.js";
 
 export default function CoinflipPage() {
-  const gameData = {
-    totalBets: 156789,
-    totalVolume: 2345678,
-    averageBet: 14.96,
-    maxWin: 1500,
-    winRate: 48.5,
-    hourlyData: Array.from({ length: 24 }, (_, i) => ({
-      hour: `${i}:00`,
-      bets: Math.floor(Math.random() * 1000) + 500,
-      volume: Math.floor(Math.random() * 10000) + 5000,
-    })),
-  };
-
   const coinFlipDescription = {
     rules: [
       {
@@ -123,7 +109,7 @@ export default function CoinflipPage() {
           <div>
             <GameDescription {...coinFlipDescription} />
 
-            <GameStats gameData={gameData} />
+            {/* <GameStats gameData={gameData} /> */}
           </div>
         </div>
       </div>

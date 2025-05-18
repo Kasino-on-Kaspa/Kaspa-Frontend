@@ -15,6 +15,7 @@ import { Route as IndexImport } from "./routes/index";
 import { Route as StatsIndexImport } from "./routes/stats/index";
 import { Route as ReferralIndexImport } from "./routes/referral/index";
 import { Route as ComingSoonIndexImport } from "./routes/coming-soon/index";
+import { Route as AboutIndexImport } from "./routes/about/index";
 import { Route as GamesDicerollIndexImport } from "./routes/games/diceroll/index";
 import { Route as GamesCoinflipIndexImport } from "./routes/games/coinflip/index";
 
@@ -44,6 +45,12 @@ const ComingSoonIndexRoute = ComingSoonIndexImport.update({
   getParentRoute: () => rootRoute,
 } as any);
 
+const AboutIndexRoute = AboutIndexImport.update({
+  id: "/about/",
+  path: "/about/",
+  getParentRoute: () => rootRoute,
+} as any);
+
 const GamesDicerollIndexRoute = GamesDicerollIndexImport.update({
   id: "/games/diceroll/",
   path: "/games/diceroll/",
@@ -65,6 +72,13 @@ declare module "@tanstack/react-router" {
       path: "/";
       fullPath: "/";
       preLoaderRoute: typeof IndexImport;
+      parentRoute: typeof rootRoute;
+    };
+    "/about/": {
+      id: "/about/";
+      path: "/about";
+      fullPath: "/about";
+      preLoaderRoute: typeof AboutIndexImport;
       parentRoute: typeof rootRoute;
     };
     "/coming-soon/": {
@@ -109,6 +123,7 @@ declare module "@tanstack/react-router" {
 
 export interface FileRoutesByFullPath {
   "/": typeof IndexRoute;
+  "/about": typeof AboutIndexRoute;
   "/coming-soon": typeof ComingSoonIndexRoute;
   "/referral": typeof ReferralIndexRoute;
   "/stats": typeof StatsIndexRoute;
@@ -118,6 +133,7 @@ export interface FileRoutesByFullPath {
 
 export interface FileRoutesByTo {
   "/": typeof IndexRoute;
+  "/about": typeof AboutIndexRoute;
   "/coming-soon": typeof ComingSoonIndexRoute;
   "/referral": typeof ReferralIndexRoute;
   "/stats": typeof StatsIndexRoute;
@@ -128,6 +144,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRoute;
   "/": typeof IndexRoute;
+  "/about/": typeof AboutIndexRoute;
   "/coming-soon/": typeof ComingSoonIndexRoute;
   "/referral/": typeof ReferralIndexRoute;
   "/stats/": typeof StatsIndexRoute;
@@ -139,6 +156,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath;
   fullPaths:
     | "/"
+    | "/about"
     | "/coming-soon"
     | "/referral"
     | "/stats"
@@ -147,6 +165,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo;
   to:
     | "/"
+    | "/about"
     | "/coming-soon"
     | "/referral"
     | "/stats"
@@ -155,6 +174,7 @@ export interface FileRouteTypes {
   id:
     | "__root__"
     | "/"
+    | "/about/"
     | "/coming-soon/"
     | "/referral/"
     | "/stats/"
@@ -165,6 +185,7 @@ export interface FileRouteTypes {
 
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute;
+  AboutIndexRoute: typeof AboutIndexRoute;
   ComingSoonIndexRoute: typeof ComingSoonIndexRoute;
   ReferralIndexRoute: typeof ReferralIndexRoute;
   StatsIndexRoute: typeof StatsIndexRoute;
@@ -174,6 +195,7 @@ export interface RootRouteChildren {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AboutIndexRoute: AboutIndexRoute,
   ComingSoonIndexRoute: ComingSoonIndexRoute,
   ReferralIndexRoute: ReferralIndexRoute,
   StatsIndexRoute: StatsIndexRoute,
@@ -192,6 +214,7 @@ export const routeTree = rootRoute
       "filePath": "__root.tsx",
       "children": [
         "/",
+        "/about/",
         "/coming-soon/",
         "/referral/",
         "/stats/",
@@ -201,6 +224,9 @@ export const routeTree = rootRoute
     },
     "/": {
       "filePath": "index.tsx"
+    },
+    "/about/": {
+      "filePath": "about/index.tsx"
     },
     "/coming-soon/": {
       "filePath": "coming-soon/index.tsx"

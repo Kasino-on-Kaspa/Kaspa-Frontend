@@ -20,12 +20,12 @@ import WalletButton from "./WalletButton";
 
 const navLinks = [
   {
-    href: "#games",
+    href: "/",
     icon: "ph:club-fill",
     label: "Casino",
   },
   {
-    href: "#about",
+    href: "/about",
     icon: "ph:question-fill",
     label: "About",
   },
